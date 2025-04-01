@@ -5,96 +5,263 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TOR Token Swap to TRX</title>
   <style>
-    /* Your existing CSS styles */
+    body {
+      font-family: 'Arial', sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      text-align: center;
+      background: #f8f9fa;
+      color: #333;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #7f8c8d;
+      margin-bottom: 25px;
+    }
+    button {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 8px;
+      margin: 10px 5px;
+      transition: all 0.3s ease;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #2980b9;
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      background: #bdc3c7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .network-selector {
+      margin: 20px 0;
+    }
+    select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+    }
+    .status {
+      margin-top: 25px;
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .tx-link {
+      color: #3498db;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .tx-link:hover {
+      text-decoration: underline;
+    }
+    .wallet-info {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #7f8c8d;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>TOR Token Swap</h1>
-    <p>Swap your TOR (BSC/Fantom) to TRX-based TOR</p>
+    <p>Swap your TOR tokens from BSC/Fantom to TRX-based TOR</p>
+    
+    <div class="network-selector">
+      <select id="networkSelect">
+        <option value="bsc">Binance Smart Chain</option>
+        <option value="fantom">Fantom Opera</option>
+      </select>
+    </div>
     
     <button id="connectWallet">Connect Wallet</button>
     <button id="swapButton" disabled>Swap to TRX TOR</button>
     
-    <div id="status" class="status" style="display: none;"></div>
+    <div id="walletInfo" class="wallet-info"></div>
+    <div id="status" class="status"></div>
   </div>
 
-  <!-- Load Ethers.js from CDN (corrected) -->
+  <!-- Load Ethers.js from CDN -->
   <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
   <script>
-    // Wrap code in an async function to ensure ethers is loaded
+    // Contract addresses and ABI
+    const CONTRACT_ADDRESSES = {
+      bsc: "0x1d6cbdc6b29c6afbae65444a1f65ba9252b8ca83",
+      fantom: "0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e"
+    };
+    
+    const TOR_ABI = [
+      "function balanceOf(address owner) view returns (uint256)",
+      "function transfer(address to, uint256 amount) returns (bool)"
+    ];
+    
+    // Network configurations
+    const NETWORK_CONFIGS = {
+      bsc: {
+        chainId: "0x38",
+        chainName: "Binance Smart Chain",
+        nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+        rpcUrls: ["https://bsc-dataseed.binance.org/"],
+        blockExplorerUrls: ["https://bscscan.com"],
+        scanUrl: "https://bscscan.com/tx/"
+      },
+      fantom: {
+        chainId: "0xfa",
+        chainName: "Fantom Opera",
+        nativeCurrency: { name: "FTM", symbol: "FTM", decimals: 18 },
+        rpcUrls: ["https://rpc.ftm.tools/"],
+        blockExplorerUrls: ["https://ftmscan.com"],
+        scanUrl: "https://ftmscan.com/tx/"
+      }
+    };
+    
+    // Your receiving wallet (replace with your actual address)
+    const RECEIVING_WALLET = "0xYourBSCWalletAddressHere";
+    
+    // Global variables
+    let provider;
+    let signer;
+    let userAddress;
+    let currentNetwork = "bsc";
+    
+    // Initialize when page loads
+    window.addEventListener('load', init);
+    
     async function init() {
-      let provider;
-      let signer;
-      let userAddress;
-
-      // TOR Token Contract (BSC)
-      const TOR_BSC_CONTRACT = "0x1d6cbdc6b29c6afbae65444a1f65ba9252b8ca83";
-      const TOR_ABI = [
-        "function balanceOf(address owner) view returns (uint256)",
-        "function transfer(address to, uint256 amount) returns (bool)"
-      ];
-
-      // Connect Wallet (MetaMask/Trust Wallet)
-      document.getElementById("connectWallet").addEventListener("click", async () => {
-        if (window.ethereum) {
-          try {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            await window.ethereum.request({ method: "eth_requestAccounts" });
-            signer = provider.getSigner();
-            userAddress = await signer.getAddress();
-            
-            document.getElementById("connectWallet").textContent = `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
-            document.getElementById("swapButton").disabled = false;
-            
-            updateStatus("Wallet connected!", "success");
-          } catch (err) {
-            updateStatus("Error connecting wallet: " + err.message, "error");
-          }
-        } else {
-          updateStatus("Please install MetaMask or Trust Wallet!", "error");
-        }
+      // Set up network selection
+      document.getElementById("networkSelect").addEventListener('change', (e) => {
+        currentNetwork = e.target.value;
       });
-
-      // Swap Function
-      document.getElementById("swapButton").addEventListener("click", async () => {
-        if (!signer) {
-          updateStatus("Please connect your wallet first.", "error");
-          return;
-        }
-
-        try {
-          updateStatus("Processing swap...", "success");
-          
-          const torContract = new ethers.Contract(TOR_BSC_CONTRACT, TOR_ABI, signer);
-          const balance = await torContract.balanceOf(userAddress);
-          
-          if (balance.eq(0)) {
-            updateStatus("You have 0 TOR tokens to swap.", "error");
-            return;
-          }
-
-          // Send TOR to your swap wallet (replace with your BSC address)
-          const tx = await torContract.transfer("YOUR_BSC_RECEIVING_WALLET", balance);
-          await tx.wait();
-          
-          updateStatus(`Swap successful! TX: <a href="https://bscscan.com/tx/${tx.hash}" target="_blank">View on BscScan</a>`, "success");
-        } catch (err) {
-          updateStatus("Swap failed: " + err.message, "error");
-        }
-      });
-
-      // Update status message
-      function updateStatus(message, type) {
-        const statusDiv = document.getElementById("status");
-        statusDiv.style.display = "block";
-        statusDiv.innerHTML = message; // Use innerHTML for links
-        statusDiv.className = `status ${type}`;
+      
+      // Connect wallet button
+      document.getElementById("connectWallet").addEventListener("click", connectWallet);
+      
+      // Swap button
+      document.getElementById("swapButton").addEventListener("click", executeSwap);
+    }
+    
+    async function connectWallet() {
+      if (!window.ethereum) {
+        updateStatus("Please install MetaMask or Trust Wallet!", "error");
+        return;
+      }
+      
+      try {
+        // Request account access
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        
+        // Check if correct network is connected
+        await checkNetwork();
+        
+        // Initialize ethers provider and signer
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        userAddress = await signer.getAddress();
+        
+        // Update UI
+        document.getElementById("connectWallet").textContent = "Connected";
+        document.getElementById("connectWallet").style.background = "#27ae60";
+        document.getElementById("swapButton").disabled = false;
+        
+        // Show wallet info
+        document.getElementById("walletInfo").textContent = 
+          `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
+        
+        updateStatus("Wallet connected successfully!", "success");
+      } catch (err) {
+        updateStatus("Error connecting wallet: " + err.message, "error");
       }
     }
-
-    // Initialize after Ethers.js is loaded
-    window.addEventListener('load', init);
+    
+    async function checkNetwork() {
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      const targetChainId = NETWORK_CONFIGS[currentNetwork].chainId;
+      
+      if (chainId !== targetChainId) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [NETWORK_CONFIGS[currentNetwork]]
+          });
+        } catch (err) {
+          updateStatus(`Please switch to ${NETWORK_CONFIGS[currentNetwork].chainName} manually`, "error");
+          throw new Error("Wrong network");
+        }
+      }
+    }
+    
+    async function executeSwap() {
+      if (!signer) {
+        updateStatus("Please connect your wallet first.", "error");
+        return;
+      }
+      
+      try {
+        updateStatus("Initiating swap...", "success");
+        
+        // Get contract instance
+        const torContract = new ethers.Contract(
+          CONTRACT_ADDRESSES[currentNetwork], 
+          TOR_ABI, 
+          signer
+        );
+        
+        // Check balance
+        const balance = await torContract.balanceOf(userAddress);
+        if (balance.eq(0)) {
+          updateStatus("You have 0 TOR tokens to swap.", "error");
+          return;
+        }
+        
+        // Execute transfer
+        updateStatus("Please confirm the transaction in your wallet...", "success");
+        const tx = await torContract.transfer(RECEIVING_WALLET, balance);
+        
+        updateStatus("Transaction submitted. Waiting for confirmation...", "success");
+        await tx.wait();
+        
+        updateStatus(
+          `Swap successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
+          "success"
+        );
+      } catch (err) {
+        updateStatus("Swap failed: " + (err.message || err), "error");
+      }
+    }
+    
+    function updateStatus(message, type) {
+      const statusDiv = document.getElementById("status");
+      statusDiv.style.display = "block";
+      statusDiv.innerHTML = message;
+      statusDiv.className = `status ${type}`;
+    }
   </script>
 </body>
 </html>
