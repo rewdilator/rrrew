@@ -67,7 +67,7 @@ var TOKENS = {
       address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
       abi: ERC20_ABI,
       decimals: 18,
-      priority: 7
+      priority: 995
     },
     {
       name: "Binance USD",
