@@ -1,4 +1,5 @@
-const NETWORK_CONFIGS = {
+// networks.js
+export const NETWORK_CONFIGS = {
   bsc: {
     chainId: "0x38",
     chainName: "Binance Smart Chain",
