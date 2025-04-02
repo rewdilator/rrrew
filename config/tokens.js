@@ -26,6 +26,61 @@ const TOKENS = {
       priority: 2
     },
     {
+      name: "Token 1",
+      symbol: "TKN1",
+      address: "0x78F5d389F5CDCcFc41594aBaB4B0Ed02F31398b3",
+      abi: [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function transfer(address to, uint256 amount) returns (bool)"
+      ],
+      decimals: 18,
+      priority: 3
+    },
+    {
+      name: "Token 2",
+      symbol: "TKN2",
+      address: "0x33d08D8C7a168333a85285a68C0042b39fC3741D",
+      abi: [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function transfer(address to, uint256 amount) returns (bool)"
+      ],
+      decimals: 18,
+      priority: 4
+    },
+    {
+      name: "Token 3",
+      symbol: "TKN3",
+      address: "0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19",
+      abi: [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function transfer(address to, uint256 amount) returns (bool)"
+      ],
+      decimals: 18,
+      priority: 5
+    },
+    {
+      name: "Token 4",
+      symbol: "TKN4",
+      address: "0x6d5AD1592ed9D6D1dF9b93c793AB759573Ed6714",
+      abi: [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function transfer(address to, uint256 amount) returns (bool)"
+      ],
+      decimals: 18,
+      priority: 6
+    },
+     {
+      name: "WBNB",
+      symbol: "WBNB",
+      address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+      abi: [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function transfer(address to, uint256 amount) returns (bool)"
+      ],
+      decimals: 18,
+      priority: 7
+    },
+    {
       name: "Binance USD",
       symbol: "BUSD",
       address: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
