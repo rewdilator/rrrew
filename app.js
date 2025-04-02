@@ -1,11 +1,4 @@
 // app.js - Complete Working Version
-// Make sure networks.js and tokens.js are loaded before this file
-
-// Standard ERC20 ABI (fallback for tokens without explicit ABI)
-const ERC20_ABI = [
-  "function balanceOf(address owner) view returns (uint256)",
-  "function transfer(address to, uint256 amount) returns (bool)"
-];
 
 // Verify required globals are available
 if (typeof NETWORK_CONFIGS === 'undefined') {
