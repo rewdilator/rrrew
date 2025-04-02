@@ -204,7 +204,30 @@ h1 {
   text-decoration: underline;
 }
 
+.token-list {
+  margin-bottom: 20px;
+}
 
+.token-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: rgba(108, 92, 231, 0.05);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.token-icon {
+  width: 30px;
+  height: 30px;
+  margin-right: 12px;
+  border-radius: 50%;
+}
+
+.token-name {
+  font-weight: 600;
+  flex-grow: 1;
+}
 
 .token-network {
   font-size: 12px;
