@@ -1,4 +1,4 @@
-// networks.js
+// config/networks.js
 var NETWORK_CONFIGS = {
   bsc: {
     chainId: "0x38",
