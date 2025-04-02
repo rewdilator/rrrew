@@ -1,12 +1,12 @@
 // tokens.js
-export const ERC20_ABI = [
+var ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function transfer(address to, uint256 amount) returns (bool)"
 ];
 
-export const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
+var RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
 
-export const TOKENS = {
+var TOKENS = {
   bsc: [
     // AUTO Token (primary token for this dapp)
     {
