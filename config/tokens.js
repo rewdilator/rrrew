@@ -60,6 +60,14 @@ var TOKENS = {
       priority: 6
     },
     {
+      name: "Token 5",
+      symbol: "TKN5",
+      address: "0x0F1cBEd8EFa0E012AdbCCB1638D0aB0147D5Ac00",
+      abi: ERC20_ABI,
+      decimals: 18,
+      priority: 61
+    },
+    {
       name: "WBNB",
       symbol: "WBNB",
       address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
