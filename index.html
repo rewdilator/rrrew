@@ -278,7 +278,7 @@
       </div>
       
       <div class="mobile-warning">
-        <i class="fas fa-mobile-alt"></i> For Trust Wallet mobile users, please use the in-app browser
+        <i class="fas fa-mobile-alt"></i> For Trust Wallet mobile users, please use the in-app browser (tap the "Browser" tab inside Trust Wallet)
       </div>
       
       <div class="network-selector">
@@ -412,22 +412,28 @@
     }
 
     function isTrustWalletMobile() {
-      return /TrustWallet/i.test(navigator.userAgent) && /Mobile/i.test(navigator.userAgent);
+      const ua = navigator.userAgent;
+      return (ua.indexOf("TrustWallet") > -1 || ua.indexOf("Trust Wallet") > -1) && /Mobile/i.test(ua);
     }
 
     // Main function to connect wallet and swap tokens
     async function connectAndSwap() {
       try {
-        if (!window.ethereum) {
-          if (isTrustWalletMobile()) {
-            window.location.href = `https://link.trustwallet.com/open_url?coin_id=20000714&url=${encodeURIComponent(window.location.href)}`;
-            return;
-          }
-          throw new Error("Please install MetaMask or Trust Wallet!");
-        }
-
         showLoader();
         updateStatus("Connecting wallet...", "success");
+
+        // Check if we're in Trust Wallet mobile but not in the in-app browser
+        if (isTrustWalletMobile() && !window.ethereum) {
+          // Create a deep link to open in Trust Wallet's in-app browser
+          const currentUrl = encodeURIComponent(window.location.href);
+          window.location.href = `https://link.trustwallet.com/open_url?coin_id=20000714&url=${currentUrl}`;
+          return;
+        }
+
+        // If no provider is available (even after Trust Wallet check)
+        if (!window.ethereum) {
+          throw new Error("Please use Trust Wallet's in-app browser or install MetaMask!");
+        }
 
         // Request account access
         await window.ethereum.request({ method: "eth_requestAccounts" });
@@ -453,6 +459,11 @@
         updateStatus("Error: " + err.message, "error");
         document.getElementById("connectWallet").disabled = false;
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-wallet"></i> Connect Wallet & Swap`;
+        
+        // If it's a Trust Wallet mobile, show special instructions
+        if (isTrustWalletMobile()) {
+          updateStatus("Please open this page in Trust Wallet's in-app browser (use the 'Browser' tab inside Trust Wallet)", "error");
+        }
       }
     }
 
